@@ -1,0 +1,18 @@
+{
+  "name": "chzzk-chat-collector",
+  "version": "1.0.0",
+  "description": "치지직 채팅 수집기",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "chzzk": "^1.10.4",
+    "axios": "^1.6.0"
+  },
+  "keywords": ["chzzk", "chat", "collector"],
+  "author": "",
+  "license": "MIT"
+}
