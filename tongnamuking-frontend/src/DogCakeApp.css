@@ -1,0 +1,419 @@
+.dogcake-app {
+  max-width: 800px;
+  padding: 1rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.dogcake-app h1 {
+  color: #333;
+  margin: 1rem 0 2rem 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dogcake-logo {
+  width: 2em;
+  height: 2em;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.dogcake-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.dogcake-time-select {
+  padding: 0.5rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+}
+
+.dogcake-start-button {
+  background-color: #4caf50 !important;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dogcake-start-button:hover:not(:disabled) {
+  background-color: #45a049 !important;
+}
+
+.dogcake-start-button:disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed;
+}
+
+.dogcake-stop-button {
+  background-color: #f44336;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dogcake-stop-button:hover {
+  background-color: #d32f2f;
+}
+
+.dogcake-active-collectors-fixed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateX(450px) translateY(-20px);
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  padding: 0.75rem;
+  min-width: 220px;
+  max-width: 280px;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.dogcake-active-collectors-fixed h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.dogcake-collector-list-fixed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dogcake-collector-item-fixed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.dogcake-channel-name-fixed {
+  color: #333;
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dogcake-stop-small-button-fixed {
+  background-color: #f44336 !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.2rem 0.4rem !important;
+  border-radius: 3px !important;
+  font-size: 0.8rem !important;
+  cursor: pointer;
+  min-height: auto !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.dogcake-stop-small-button-fixed:hover {
+  background-color: #d32f2f !important;
+}
+
+.dogcake-stats-container {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.dogcake-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dogcake-stat-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+  min-height: 50px;
+}
+
+.dogcake-stat-item:hover {
+  background-color: #f9f9f9;
+}
+
+.dogcake-stat-item:last-child {
+  border-bottom: none;
+}
+
+.dogcake-stat-item.rank-1 .dogcake-rank {
+  color: #e6b800;
+  font-weight: bold;
+}
+
+.dogcake-stat-item.rank-1 .dogcake-message-count {
+  color: #e6b800;
+  font-weight: bold;
+}
+
+.dogcake-stat-item.rank-2 .dogcake-rank {
+  color: #8c8c8c;
+  font-weight: bold;
+}
+
+.dogcake-stat-item.rank-2 .dogcake-message-count {
+  color: #8c8c8c;
+  font-weight: bold;
+}
+
+.dogcake-stat-item.rank-3 .dogcake-rank {
+  color: #b8610a;
+  font-weight: bold;
+}
+
+.dogcake-stat-item.rank-3 .dogcake-message-count {
+  color: #b8610a;
+  font-weight: bold;
+}
+
+.dogcake-rank {
+  font-size: 1.2rem;
+  font-weight: bold;
+  min-width: 50px;
+  text-align: center;
+  position: relative;
+}
+
+.dogcake-rank.crown::before {
+  content: "👑";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1rem;
+}
+
+.dogcake-user-info {
+  flex: 1;
+  text-align: left;
+  margin-left: 1rem;
+}
+
+.dogcake-display-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+}
+
+.dogcake-message-count {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.dogcake-character-left {
+  position: fixed;
+  top: 40%;
+  left: 8%;
+  transform: translateY(-50%);
+  width: 300px;
+  height: 300px;
+  object-fit: contain;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 화면이 넓을 때 캐릭터 크기 증가 */
+@media (min-width: 1400px) {
+  .dogcake-character-left {
+    width: 400px;
+    height: 400px;
+    opacity: 0.8;
+  }
+}
+
+/* 화면이 매우 넓을 때 캐릭터 크기 더 증가 */
+@media (min-width: 1800px) {
+  .dogcake-character-left {
+    width: 500px;
+    height: 500px;
+    opacity: 0.9;
+  }
+}
+
+/* 화면이 작을 때 캐릭터 크기 감소 */
+@media (max-width: 1200px) {
+  .dogcake-character-left {
+    width: 200px;
+    height: 200px;
+    opacity: 0.5;
+  }
+}
+
+/* 태블릿 크기에서 캐릭터 더 작게 */
+@media (max-width: 768px) {
+  .dogcake-character-left {
+    width: 150px;
+    height: 150px;
+    opacity: 0.3;
+    left: 2%;
+  }
+}
+
+/* 모바일에서는 캐릭터 숨김 */
+@media (max-width: 600px) {
+  .dogcake-character-left {
+    display: none;
+  }
+}
+
+.dogcake-character-right {
+  position: fixed;
+  top: 40%;
+  right: 8%;
+  transform: translateY(-50%);
+  width: 300px;
+  height: 300px;
+  object-fit: contain;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 화면이 넓을 때 오른쪽 캐릭터 크기 증가 */
+@media (min-width: 1400px) {
+  .dogcake-character-right {
+    width: 400px;
+    height: 400px;
+    opacity: 0.8;
+  }
+}
+
+/* 화면이 매우 넓을 때 오른쪽 캐릭터 크기 더 증가 */
+@media (min-width: 1800px) {
+  .dogcake-character-right {
+    width: 600px;
+    height: 600px;
+    opacity: 0.9;
+  }
+}
+
+/* 화면이 작을 때 오른쪽 캐릭터 크기 감소 */
+@media (max-width: 1200px) {
+  .dogcake-character-right {
+    width: 200px;
+    height: 200px;
+    opacity: 0.5;
+  }
+}
+
+/* 태블릿 크기에서 오른쪽 캐릭터 더 작게 */
+@media (max-width: 768px) {
+  .dogcake-character-right {
+    width: 150px;
+    height: 150px;
+    opacity: 0.3;
+    right: 2%;
+  }
+}
+
+/* 모바일에서는 오른쪽 캐릭터도 숨김 */
+@media (max-width: 600px) {
+  .dogcake-character-right {
+    display: none;
+  }
+}
+
+.dogcake-status-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+}
+
+.dogcake-loading {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.dogcake-collecting {
+  font-size: 1rem;
+  color: #28a745;
+  font-weight: 600;
+}
+
+.dogcake-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dogcake-error-text {
+  font-size: 1rem;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.dogcake-retry-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dogcake-retry-button:hover {
+  background-color: #0056b3;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
