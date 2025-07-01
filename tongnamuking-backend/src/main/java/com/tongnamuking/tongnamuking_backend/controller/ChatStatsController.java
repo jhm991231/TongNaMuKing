@@ -4,6 +4,11 @@ import com.tongnamuking.tongnamuking_backend.dto.ChatStatsResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ChatDogRatioResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ManualGameSegmentRequest;
 import com.tongnamuking.tongnamuking_backend.service.ChatStatsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,14 +19,21 @@ import java.util.List;
 @RequestMapping("/api/chat-stats")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Tag(name = "채팅 통계", description = "채팅 통계 및 분석 API")
 public class ChatStatsController {
     
     private final ChatStatsService chatStatsService;
     
     @GetMapping("/channel/{channelName}")
+    @Operation(summary = "채널별 채팅 통계 조회", description = "지정된 채널의 채팅 통계를 조회합니다. 시간 범위를 지정할 수 있습니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "통계 조회 성공"),
+        @ApiResponse(responseCode = "404", description = "채널을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
     public ResponseEntity<List<ChatStatsResponse>> getChatStatsByChannel(
-            @PathVariable String channelName,
-            @RequestParam(defaultValue = "0") int hours) {
+            @Parameter(description = "채널명", required = true) @PathVariable String channelName,
+            @Parameter(description = "조회할 시간 범위 (시간 단위, 0이면 전체)") @RequestParam(defaultValue = "0") int hours) {
         
         List<ChatStatsResponse> stats;
         if (hours > 0) {

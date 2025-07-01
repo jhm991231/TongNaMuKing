@@ -82,10 +82,10 @@ public class ChatStatsService {
             return calculateChatDogRatioManual(channel.get(), justChatDuration);
         }
         
-        // 오늘 하루의 카테고리 변경 이벤트들 조회
-        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        // 방송 시작부터의 카테고리 변경 이벤트들 조회
+        LocalDateTime broadcastStart = getBroadcastStartTime(channel.get());
         List<CategoryChangeEvent> categoryChanges = categoryChangeEventRepository.findByChannelAndTimeRange(
-            channel.get().getId(), today);
+            channel.get().getId(), broadcastStart);
         
         // 카테고리 변경 이벤트가 없으면 수동 방식으로 계산
         if (categoryChanges.isEmpty()) {
@@ -613,11 +613,11 @@ public class ChatStatsService {
         }
         
         Channel channel = channelOpt.get();
-        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime broadcastStart = getBroadcastStartTime(channel);
         
         // 카테고리 변경 이벤트 조회
         List<CategoryChangeEvent> categoryChanges = categoryChangeEventRepository.findByChannelAndTimeRange(
-            channel.getId(), today);
+            channel.getId(), broadcastStart);
         
         // 채팅 메시지 수 조회
         long totalMessages = chatMessageRepository.count();
@@ -628,7 +628,7 @@ public class ChatStatsService {
             "totalMessages", totalMessages,
             "channelMessages", channelMessages,
             "categoryChanges", categoryChanges,
-            "todayStart", today,
+            "broadcastStart", broadcastStart,
             "now", LocalDateTime.now()
         );
     }
@@ -643,8 +643,43 @@ public class ChatStatsService {
     
     // 방송 시작 시간 찾기 (가장 오래된 채팅 메시지 시간)
     private LocalDateTime findStreamStartTime(Channel channel) {
-        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
-        return chatMessageRepository.findOldestMessageTimeByChannel(channel.getId(), today);
+        LocalDateTime broadcastStart = getBroadcastStartTime(channel);
+        return chatMessageRepository.findOldestMessageTimeByChannel(channel.getId(), broadcastStart);
+    }
+    
+    // 방송 시작 시간 결정 (독케익은 liveStartTime, 다른 채널은 자정)
+    private LocalDateTime getBroadcastStartTime(Channel channel) {
+        if ("독케익".equals(channel.getChannelName()) && channel.getLiveStartTime() != null) {
+            // 방송이 진행 중이면 방송 시작 시간부터, 아니면 방송 종료 후 30분까지 포함
+            if (channel.getIsCurrentlyLive() != null && channel.getIsCurrentlyLive()) {
+                return channel.getLiveStartTime();
+            } else {
+                // 방송 종료 후 30분 버퍼를 고려하여 계산
+                LocalDateTime bufferEndTime = channel.getLiveStartTime().plusMinutes(getBroadcastDurationWithBuffer(channel));
+                if (LocalDateTime.now().isBefore(bufferEndTime)) {
+                    return channel.getLiveStartTime();
+                }
+            }
+        }
+        // 다른 채널은 기존 자정 기준 유지
+        return LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+    }
+    
+    // 방송 지속 시간 + 버퍼 시간 계산 (분 단위)
+    private long getBroadcastDurationWithBuffer(Channel channel) {
+        if (channel.getLiveStartTime() == null) {
+            return 0;
+        }
+        
+        LocalDateTime endTime = LocalDateTime.now();
+        if (channel.getIsCurrentlyLive() != null && !channel.getIsCurrentlyLive()) {
+            // 방송이 끝났으면 30분 버퍼 추가
+            long broadcastMinutes = java.time.Duration.between(channel.getLiveStartTime(), endTime).toMinutes();
+            return broadcastMinutes + 30; // 30분 버퍼
+        }
+        
+        // 방송 중이면 현재 시간까지
+        return java.time.Duration.between(channel.getLiveStartTime(), endTime).toMinutes();
     }
     
     // 저챗→게임 전환 구간을 나타내는 내부 클래스

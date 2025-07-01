@@ -29,5 +29,7 @@ public class Channel {
     
     private LocalDateTime liveStartTime;
     
+    private LocalDateTime lastLiveEndTime; // 마지막 방송 종료 시간
+    
     private String chzzkChannelId; // Chzzk API 호출용 채널 ID
 }

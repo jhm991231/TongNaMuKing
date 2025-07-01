@@ -158,11 +158,23 @@ public class ChzzkService {
                     
                     if (isCurrentlyLive && !wasLive) {
                         // 라이브 시작
-                        channel.setLiveStartTime(LocalDateTime.now());
-                        System.out.println("독케익 라이브 시작 감지: " + LocalDateTime.now());
+                        LocalDateTime now = LocalDateTime.now();
+                        
+                        // 이전 방송 종료 후 30분 이내면 연속 방송으로 처리
+                        if (channel.getLastLiveEndTime() != null && 
+                            java.time.Duration.between(channel.getLastLiveEndTime(), now).toMinutes() <= 30) {
+                            System.out.println("독케익 연속 방송 감지 (이전 종료: " + channel.getLastLiveEndTime() + ", 현재 시작: " + now + ")");
+                            // liveStartTime은 유지 (연속 방송)
+                        } else {
+                            // 새로운 방송 시작
+                            channel.setLiveStartTime(now);
+                            System.out.println("독케익 새 방송 시작 감지: " + now);
+                        }
                     } else if (!isCurrentlyLive && wasLive) {
                         // 라이브 종료
-                        System.out.println("독케익 라이브 종료 감지: " + LocalDateTime.now());
+                        LocalDateTime now = LocalDateTime.now();
+                        channel.setLastLiveEndTime(now);
+                        System.out.println("독케익 라이브 종료 감지: " + now);
                         // liveStartTime은 유지 (마지막 방송 시작 시간 기록용)
                     }
                     

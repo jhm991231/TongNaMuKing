@@ -14,6 +14,9 @@ function App() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [maxCollectors, setMaxCollectors] = useState(3);
   const [channelIdToName, setChannelIdToName] = useState(new Map());
+  
+  // 독케익 채널 ID (멀티채널 앱에서 제외)
+  const DOGCAKE_CHANNEL_ID = "9c0c6780aa8f2a7d70c4bf2bb3c292c9";
 
   useEffect(() => {
     checkCollectionStatus();
@@ -180,7 +183,7 @@ function App() {
   const checkNodejsCollectionStatus = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/nodejs-chat-collection/status"
+        "http://localhost:8080/api/multi-channel-collection/status"
       );
       const data = await response.json();
       setActiveCollectors(new Set(data.activeChannels));
@@ -214,7 +217,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/nodejs-chat-collection/start/${selectedChannelId}`,
+        `http://localhost:8080/api/multi-channel-collection/start/${selectedChannelId}`,
         {
           method: "POST",
         }
@@ -238,7 +241,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/nodejs-chat-collection/stop/${selectedChannelId}`,
+        `http://localhost:8080/api/multi-channel-collection/stop/${selectedChannelId}`,
         {
           method: "POST",
         }
@@ -326,7 +329,7 @@ function App() {
                   className="stop-small-button-fixed"
                   onClick={() => {
                     fetch(
-                      `http://localhost:8080/api/nodejs-chat-collection/stop/${channelId}`,
+                      `http://localhost:8080/api/multi-channel-collection/stop/${channelId}`,
                       {
                         method: "POST",
                       }

@@ -41,12 +41,10 @@ function DogCakeApp() {
   const autoStartCollection = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/nodejs-chat-collection/status"
+        "http://localhost:8080/api/dogcake-collection/status"
       );
       const data = await response.json();
-      const isDogCakeCollecting = data.activeChannels.includes(
-        DOGCAKE_CHANNEL.channelId
-      );
+      const isDogCakeCollecting = data.isCollecting;
 
       // 독케익이 수집 중이 아니면 자동으로 시작 (알림 없이)
       if (!isDogCakeCollecting) {
@@ -79,7 +77,7 @@ function DogCakeApp() {
   const startChatCollection = async (showAlert = true) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/nodejs-chat-collection/start/${DOGCAKE_CHANNEL.channelId}`,
+        "http://localhost:8080/api/dogcake-collection/start",
         {
           method: "POST",
         }
@@ -109,7 +107,7 @@ function DogCakeApp() {
   const stopChatCollection = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/nodejs-chat-collection/stop/${DOGCAKE_CHANNEL.channelId}`,
+        "http://localhost:8080/api/dogcake-collection/stop",
         {
           method: "POST",
         }
@@ -144,16 +142,13 @@ function DogCakeApp() {
   const checkNodejsCollectionStatus = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/nodejs-chat-collection/status"
+        "http://localhost:8080/api/dogcake-collection/status"
       );
       const data = await response.json();
-      // 독케익 채널이 수집 중인지 확인
-      const isDogCakeCollecting = data.activeChannels.includes(
-        DOGCAKE_CHANNEL.channelId
-      );
-      setIsCollecting(isDogCakeCollecting);
+      // 독케익 수집 상태 확인
+      setIsCollecting(data.isCollecting);
     } catch (error) {
-      console.error("Node.js 수집 상태 확인 실패:", error);
+      console.error("독케익 수집 상태 확인 실패:", error);
     }
   };
 
