@@ -1,0 +1,30 @@
+# Backend only Dockerfile for Railway
+FROM gradle:8.5-jdk21 AS builder
+WORKDIR /app
+COPY tongnamuking-backend/build.gradle tongnamuking-backend/settings.gradle ./
+COPY tongnamuking-backend/gradlew tongnamuking-backend/gradlew.bat ./
+COPY tongnamuking-backend/gradle gradle
+COPY tongnamuking-backend/src src
+RUN gradle build -x test
+
+FROM openjdk:21-jdk-slim
+WORKDIR /app
+
+# Install Node.js for chat collector
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy built jar
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+# Copy chat collector
+COPY chat-collector /app/chat-collector
+
+# Install chat collector dependencies
+RUN cd /app/chat-collector && npm install
+
+EXPOSE 8080
+CMD ["java", "-jar", "app.jar"]
