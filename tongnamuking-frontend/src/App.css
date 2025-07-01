@@ -42,6 +42,172 @@ html {
   width: 100%;
 }
 
+/* 저챗견 비율 설정 버튼 */
+.chatdog-settings-button {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 154, 158, 0.3);
+}
+
+.chatdog-settings-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 154, 158, 0.4);
+}
+
+/* 저챗견 설정 패널 */
+.chatdog-settings-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 15px;
+  padding: 25px;
+  margin: 20px 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+.chatdog-settings-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.chatdog-settings-panel p {
+  margin: 0 0 20px 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+/* 시간 설정 그룹 */
+.chatdog-time-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.time-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 15px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.time-input-group label {
+  font-weight: bold;
+  min-width: 160px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.time-input-group input {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 14px;
+  width: 80px;
+  text-align: center;
+}
+
+.time-input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.time-input-group input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.time-input-group span {
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 계산 버튼 */
+.calculate-button {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  color: #333;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 15px 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
+}
+
+.calculate-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
+}
+
+.calculate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 결과 표시 */
+.chatdog-result {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chatdog-result h4 {
+  margin: 0 0 15px 0;
+  font-size: 1.2rem;
+}
+
+.ratio-display {
+  text-align: center;
+}
+
+.ratio-percentage {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #ffeb3b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ratio-percentage strong {
+  font-size: 2rem;
+  color: #ffc107;
+}
+
+.ratio-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.ratio-details p {
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
 .search-container {
   position: relative;
   display: flex;
@@ -442,6 +608,17 @@ button:disabled {
   flex: 1;
 }
 
+.clickable-channel {
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.clickable-channel:hover {
+  text-decoration: underline;
+}
+
 .stop-small-button-fixed {
   background-color: #f44336 !important;
   color: white !important;
@@ -665,4 +842,12 @@ button:disabled {
   font-size: 1.3rem;
   font-weight: bold;
   color: #333;
+}
+
+.loading-container {
+  margin-top: 2rem;
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+  padding: 2rem;
 }

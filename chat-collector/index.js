@@ -9,6 +9,8 @@ class ChatCollector {
         this.channelId = null;
         this.channelName = null;
         this.backendUrl = 'http://localhost:8080';
+        this.currentCategory = null;
+        this.categoryCheckInterval = null;
     }
 
     async startCollection(channelId) {
@@ -39,6 +41,10 @@ class ChatCollector {
             this.isCollecting = true;
             this.channelId = channelId;
             this.channelName = channel.channelName;
+            
+            // 카테고리 모니터링 시작
+            this.startCategoryMonitoring(channelId);
+            
             console.log('채팅 수집이 시작되었습니다.');
             
             return true;
@@ -125,6 +131,63 @@ class ChatCollector {
         }
     }
 
+    startCategoryMonitoring(channelId) {
+        // 카테고리 체크 30초마다 실행
+        this.categoryCheckInterval = setInterval(async () => {
+            try {
+                const liveStatus = await this.client.live.status(channelId);
+                
+                if (liveStatus && liveStatus.status === 'OPEN') {
+                    const newCategory = {
+                        categoryType: liveStatus.categoryType,
+                        liveCategory: liveStatus.liveCategory,
+                        liveCategoryValue: liveStatus.liveCategoryValue,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // 카테고리 변경 감지
+                    if (this.hasCategoryChanged(newCategory)) {
+                        console.log(`📺 카테고리 변경: ${this.currentCategory?.liveCategoryValue || '알 수 없음'} → ${newCategory.liveCategoryValue}`);
+                        
+                        // 백엔드로 카테고리 변경 이벤트 전송
+                        await this.sendCategoryChangeToBackend({
+                            channelId,
+                            channelName: this.channelName,
+                            previousCategory: this.currentCategory,
+                            newCategory: newCategory,
+                            changeDetectedAt: new Date().toISOString()
+                        });
+                        
+                        this.currentCategory = newCategory;
+                    }
+                }
+            } catch (error) {
+                console.error('카테고리 모니터링 오류:', error);
+            }
+        }, 30000); // 30초 간격
+    }
+
+    hasCategoryChanged(newCategory) {
+        if (!this.currentCategory) {
+            this.currentCategory = newCategory;
+            return true; // 첫 번째 카테고리 감지
+        }
+        
+        return this.currentCategory.liveCategory !== newCategory.liveCategory ||
+               this.currentCategory.categoryType !== newCategory.categoryType;
+    }
+
+    async sendCategoryChangeToBackend(data) {
+        try {
+            await axios.post(`${this.backendUrl}/api/category/change`, data, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            console.log('카테고리 변경 이벤트 전송 완료');
+        } catch (error) {
+            console.error('카테고리 변경 이벤트 전송 실패:', error.message);
+        }
+    }
+
     async stopCollection() {
         if (!this.isCollecting) {
             console.log('수집 중이 아닙니다.');
@@ -136,9 +199,17 @@ class ChatCollector {
                 await this.chat.disconnect();
             }
             
+            // 카테고리 모니터링 중지
+            if (this.categoryCheckInterval) {
+                clearInterval(this.categoryCheckInterval);
+                this.categoryCheckInterval = null;
+            }
+            
             this.isCollecting = false;
             this.channelId = null;
+            this.channelName = null;
             this.chat = null;
+            this.currentCategory = null;
             
             console.log('채팅 수집이 중지되었습니다.');
             return true;

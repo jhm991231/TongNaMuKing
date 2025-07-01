@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: tongnamuking-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-yourpassword}
+      MYSQL_DATABASE: tongnamuking
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tongnamuking-network
+    restart: unless-stopped
+
+  # Spring Boot Backend
+  backend:
+    build: 
+      context: ./tongnamuking-backend
+      dockerfile: Dockerfile
+    container_name: tongnamuking-backend
+    depends_on:
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tongnamuking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-yourpassword}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: false
+    networks:
+      - tongnamuking-network
+    restart: unless-stopped
+    volumes:
+      - ./chat-collector:/app/chat-collector
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./tongnamuking-frontend
+      dockerfile: Dockerfile
+    container_name: tongnamuking-frontend
+    ports:
+      - "80:80"
+    networks:
+      - tongnamuking-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  tongnamuking-network:
+    driver: bridge

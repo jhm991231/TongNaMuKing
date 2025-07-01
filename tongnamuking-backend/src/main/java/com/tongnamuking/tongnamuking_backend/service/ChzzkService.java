@@ -8,15 +8,22 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.Optional;
+import java.time.LocalDateTime;
+import org.springframework.scheduling.annotation.Scheduled;
+import com.tongnamuking.tongnamuking_backend.entity.Channel;
+import com.tongnamuking.tongnamuking_backend.repository.ChannelRepository;
 
 @Service
 public class ChzzkService {
     
     private final RestTemplate restTemplate;
+    private final ChannelRepository channelRepository;
     private static final String CHZZK_API_BASE_URL = "https://api.chzzk.naver.com/service/v1";
     
-    public ChzzkService(RestTemplate restTemplate) {
+    public ChzzkService(RestTemplate restTemplate, ChannelRepository channelRepository) {
         this.restTemplate = restTemplate;
+        this.channelRepository = channelRepository;
     }
     
     public List<ChzzkChannelResponse.ChzzkChannel> searchChannels(String keyword) {
@@ -127,5 +134,43 @@ public class ChzzkService {
         }
         
         return null;
+    }
+    
+    // 독케익 채널의 라이브 상태를 30초마다 체크
+    @Scheduled(fixedRate = 30000)
+    public void checkDogCakeLiveStatus() {
+        try {
+            Optional<Channel> dogCakeChannel = channelRepository.findByChannelName("독케익");
+            if (dogCakeChannel.isEmpty() || dogCakeChannel.get().getChzzkChannelId() == null) {
+                return; // 독케익 채널이 없거나 Chzzk 채널 ID가 설정되지 않음
+            }
+            
+            Channel channel = dogCakeChannel.get();
+            ChzzkChannelInfoResponse.Content channelInfo = getChannelInfo(channel.getChzzkChannelId());
+            
+            if (channelInfo != null) {
+                boolean isCurrentlyLive = channelInfo.isOpenLive();
+                boolean wasLive = channel.getIsCurrentlyLive() != null ? channel.getIsCurrentlyLive() : false;
+                
+                // 라이브 상태가 변경된 경우
+                if (isCurrentlyLive != wasLive) {
+                    channel.setIsCurrentlyLive(isCurrentlyLive);
+                    
+                    if (isCurrentlyLive && !wasLive) {
+                        // 라이브 시작
+                        channel.setLiveStartTime(LocalDateTime.now());
+                        System.out.println("독케익 라이브 시작 감지: " + LocalDateTime.now());
+                    } else if (!isCurrentlyLive && wasLive) {
+                        // 라이브 종료
+                        System.out.println("독케익 라이브 종료 감지: " + LocalDateTime.now());
+                        // liveStartTime은 유지 (마지막 방송 시작 시간 기록용)
+                    }
+                    
+                    channelRepository.save(channel);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("독케익 라이브 상태 체크 실패: " + e.getMessage());
+        }
     }
 }

@@ -36,6 +36,378 @@
   width: 100%;
 }
 
+/* 독케익 저챗견 비율 설정 버튼 */
+.dogcake-chatdog-settings-button {
+  background: linear-gradient(135deg, #2c2c2c 0%, #3d2222 100%) !important;
+  color: #f8f9fa !important;
+  border: none !important;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dogcake-chatdog-settings-button:hover {
+  background: linear-gradient(135deg, #3a3a3a 0%, #4d2a2a 100%) !important;
+  color: #ffffff !important;
+}
+
+.kong-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 독케익 저챗견 설정 패널 */
+.dogcake-chatdog-settings-panel {
+  background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+  color: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 16px 0;
+  width: 100%;
+  max-width: 600px;
+}
+
+.dogcake-chatdog-settings-panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dogcake-punch-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.dogcake-chatdog-settings-panel p {
+  margin: 0 0 20px 0;
+  color: #d1d5db;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* 독케익 시간 설정 그룹 */
+.dogcake-chatdog-time-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.dogcake-time-description {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin: 10px 0 0 0;
+  text-align: center;
+  font-style: italic;
+}
+
+/* 모드 토글 스타일 */
+.dogcake-mode-toggle {
+  margin: 16px 0 24px 0;
+}
+
+.dogcake-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  background: #f8f9fa;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.dogcake-toggle-label:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.dogcake-toggle-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #0d6efd;
+}
+
+.dogcake-toggle-text {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+/* 자동 모드 설명 */
+.dogcake-auto-mode-description {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid #e9ecef;
+}
+
+.dogcake-auto-mode-description p {
+  margin: 6px 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.dogcake-auto-mode-description p:first-child {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+/* 수동 게임 구간 설정 */
+.dogcake-manual-time-settings h4 {
+  margin: 0 0 8px 0;
+  color: #f8f9fa;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.dogcake-manual-description {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.dogcake-game-segments {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.dogcake-game-segment {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.dogcake-segment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dogcake-segment-title {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.dogcake-remove-segment-btn {
+  background: #b22222 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dogcake-remove-segment-btn:hover {
+  background: #d32f2f !important;
+}
+
+.dogcake-segment-inputs {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.dogcake-time-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.dogcake-time-input label {
+  font-weight: bold;
+  min-width: 40px;
+  font-size: 0.9rem;
+}
+
+.dogcake-time-input input {
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: #495057;
+  font-size: 14px;
+  width: 80px;
+  text-align: center;
+}
+
+.dogcake-time-input input:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.dogcake-time-input span {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+.dogcake-add-segment-btn {
+  background: #4a4a4a !important;
+  color: white !important;
+  border: none !important;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 12px 0;
+  transition: all 0.2s ease;
+}
+
+.dogcake-add-segment-btn:hover {
+  background: #5a5a5a !important;
+}
+
+.dogcake-time-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 15px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.dogcake-time-input-group label {
+  font-weight: bold;
+  min-width: 160px;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.dogcake-time-input-group input {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 14px;
+  width: 80px;
+  text-align: center;
+}
+
+.dogcake-time-input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dogcake-time-input-group input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.dogcake-time-input-group span {
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 독케익 계산 버튼 */
+.dogcake-calculate-button {
+  background: #b22222 !important;
+  color: #f8f9fa !important;
+  border: none !important;
+  padding: 14px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 20px 0;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.dogcake-calculate-button:hover:not(:disabled) {
+  background: #a01e1e !important;
+}
+
+.dogcake-calculate-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* 독케익 결과 표시 */
+.dogcake-chatdog-result {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.dogcake-chatdog-result h4 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.dogcake-ratio-display {
+  text-align: center;
+}
+
+.dogcake-ratio-percentage {
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+  color: #f8f9fa;
+}
+
+.dogcake-ratio-percentage strong {
+  font-size: 1.6rem;
+  color: #ff6b6b;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+}
+
+.dogcake-ratio-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dogcake-ratio-details p {
+  margin: 0;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #d1d5db;
+  backdrop-filter: blur(10px);
+}
+
 .dogcake-time-select {
   padding: 0.5rem;
   border: 2px solid #ddd;
@@ -307,7 +679,7 @@
 .dogcake-character-right {
   position: fixed;
   top: 40%;
-  right: 8%;
+  right: 5.5%;
   transform: translateY(-50%);
   width: 300px;
   height: 300px;
@@ -406,6 +778,12 @@
 
 .dogcake-retry-button:hover {
   background-color: #0056b3;
+}
+
+/* 저챗견 하이라이트 스타일 */
+.chatdog-highlight {
+  color: #ff6b6b !important;
+  font-weight: bold;
 }
 
 @keyframes pulse {

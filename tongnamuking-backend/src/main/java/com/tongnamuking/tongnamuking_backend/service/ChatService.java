@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,12 @@ public class ChatService {
                 Channel newChannel = new Channel();
                 newChannel.setChannelName(channelName);
                 newChannel.setDisplayName(channelName);
+                
+                // 독케익 채널인 경우 Chzzk 채널 ID 설정
+                if ("독케익".equals(channelName)) {
+                    newChannel.setChzzkChannelId("b68af124ae2f1743a1dcbf5e2ab41e0b");
+                }
+                
                 return channelRepository.save(newChannel);
             });
         
@@ -44,6 +51,7 @@ public class ChatService {
         chatMessage.setUser(user);
         chatMessage.setChannel(channel);
         chatMessage.setMessage(message);
+        chatMessage.setTimestamp(LocalDateTime.now());
         chatMessageRepository.save(chatMessage);
         
         user.setTotalChatCount(user.getTotalChatCount() + 1);

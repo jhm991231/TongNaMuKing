@@ -30,8 +30,4 @@ public class ChatMessage {
     @Column(nullable = false)
     private LocalDateTime timestamp;
     
-    @PrePersist
-    public void prePersist() {
-        timestamp = LocalDateTime.now();
-    }
 }

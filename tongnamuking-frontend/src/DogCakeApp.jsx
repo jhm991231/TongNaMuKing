@@ -4,6 +4,8 @@ import dogcakeImage1 from "./assets/1.jpeg";
 import dogcakeImage2 from "./assets/20.jpeg";
 import dogRorong from "./assets/dogrorong.png";
 import gunCake from "./assets/guncake.png";
+import kongIcon from "./assets/kong.jpeg";
+import dogcakePunch from "./assets/dogcakepunch.gif";
 
 function DogCakeApp() {
   const [stats, setStats] = useState([]);
@@ -11,6 +13,16 @@ function DogCakeApp() {
   const [timeRange, setTimeRange] = useState(0);
   const [chatCollectionStatus, setChatCollectionStatus] = useState(null);
   const [isCollecting, setIsCollecting] = useState(false);
+
+  // 저챗견 비율 관련 상태
+  const [showChatDogSettings, setShowChatDogSettings] = useState(false);
+  const [justChatDuration, setJustChatDuration] = useState(120); // 저챗 시간 (분)
+  const [useManualTime, setUseManualTime] = useState(false); // 수동 시간 설정 여부
+  const [gameSegments, setGameSegments] = useState([
+    { id: 1, startMinute: 120, endMinute: 180 }, // 기본 게임 구간
+  ]); // 수동 게임 구간들
+  const [chatDogRatio, setChatDogRatio] = useState(null);
+  const [chatDogStats, setChatDogStats] = useState(null);
 
   // 독케익 채널 정보 (고정)
   const DOGCAKE_CHANNEL = {
@@ -32,8 +44,10 @@ function DogCakeApp() {
         "http://localhost:8080/api/nodejs-chat-collection/status"
       );
       const data = await response.json();
-      const isDogCakeCollecting = data.activeChannels.includes(DOGCAKE_CHANNEL.channelId);
-      
+      const isDogCakeCollecting = data.activeChannels.includes(
+        DOGCAKE_CHANNEL.channelId
+      );
+
       // 독케익이 수집 중이 아니면 자동으로 시작 (알림 없이)
       if (!isDogCakeCollecting) {
         console.log("독케익 자동 수집 시작 시도...");
@@ -161,14 +175,75 @@ function DogCakeApp() {
     }
   };
 
+  // 게임 구간 추가
+  const addGameSegment = () => {
+    const lastSegment = gameSegments[gameSegments.length - 1];
+    const newSegment = {
+      id: Math.max(...gameSegments.map((s) => s.id)) + 1,
+      startMinute: lastSegment.endMinute + 30, // 이전 게임 끝나고 30분 후
+      endMinute: lastSegment.endMinute + 90, // 1시간 게임
+    };
+    setGameSegments([...gameSegments, newSegment]);
+  };
+
+  // 게임 구간 제거
+  const removeGameSegment = (id) => {
+    if (gameSegments.length > 1) {
+      setGameSegments(gameSegments.filter((segment) => segment.id !== id));
+    }
+  };
+
+  // 게임 구간 수정
+  const updateGameSegment = (id, field, value) => {
+    setGameSegments(
+      gameSegments.map((segment) =>
+        segment.id === id ? { ...segment, [field]: Number(value) } : segment
+      )
+    );
+  };
+
+  // 저챗견 비율 계산
+  const calculateChatDogRatio = async () => {
+    try {
+      const url = useManualTime
+        ? `http://localhost:8080/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}/manual`
+        : `http://localhost:8080/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}?justChatDuration=${justChatDuration}&useManualTime=${useManualTime}`;
+
+      const requestOptions = useManualTime
+        ? {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ gameSegments }),
+          }
+        : {};
+
+      const response = await fetch(url, requestOptions);
+      const data = await response.json();
+      setChatDogRatio(data.ratio);
+      setChatDogStats(data);
+    } catch (error) {
+      console.error("저챗견 비율 계산 실패:", error);
+      alert("저챗견 비율 계산 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
     <>
       {/* 왼쪽 독케익 캐릭터 */}
-      <img src={dogRorong} alt="독케익 캐릭터" className="dogcake-character-left" />
-      
+      <img
+        src={dogRorong}
+        alt="독케익 캐릭터"
+        className="dogcake-character-left"
+      />
+
       {/* 오른쪽 독케익 캐릭터 */}
-      <img src={gunCake} alt="독케익 건케익" className="dogcake-character-right" />
-      
+      <img
+        src={gunCake}
+        alt="독케익 건케익"
+        className="dogcake-character-right"
+      />
 
       <div className="dogcake-app">
         <h1 style={{ gap: "18px" }}>
@@ -214,7 +289,162 @@ function DogCakeApp() {
               </div>
             )}
           </div>
+
+          <button
+            onClick={() => setShowChatDogSettings(!showChatDogSettings)}
+            className="dogcake-chatdog-settings-button"
+          >
+            {showChatDogSettings ? (
+              "저챗견 비율 숨기기"
+            ) : (
+              <>
+                <img src={kongIcon} alt="콩" className="kong-icon" />
+                오늘의 저챗견
+              </>
+            )}
+          </button>
         </div>
+
+        {/* 저챗견 비율 설정 패널 */}
+        {showChatDogSettings && (
+          <div className="dogcake-chatdog-settings-panel">
+            <h3>
+              <img src={dogcakePunch} alt="독케익 펀치" className="dogcake-punch-icon" />
+              오늘의 <span className="chatdog-highlight">저챗견</span> 비율
+            </h3>
+            <p>저챗에서 게임으로 바뀔 때 사라진 개떡이들의 비율을 계산합니다</p>
+
+            <div className="dogcake-mode-toggle">
+              <label className="dogcake-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={useManualTime}
+                  onChange={(e) => setUseManualTime(e.target.checked)}
+                  className="dogcake-toggle-checkbox"
+                />
+                <span className="dogcake-toggle-text">
+                  {useManualTime
+                    ? "수동 시간 설정 모드"
+                    : "자동 카테고리 감지 모드"}
+                </span>
+              </label>
+            </div>
+
+            {useManualTime && (
+              <div className="dogcake-manual-time-settings">
+                <h4>🎮 게임 구간 설정</h4>
+                <p className="dogcake-manual-description">
+                  방송 시작 후 몇 분부터 몇 분까지가 게임 시간인지 설정해주세요
+                </p>
+
+                <div className="dogcake-game-segments">
+                  {gameSegments.map((segment, index) => (
+                    <div key={segment.id} className="dogcake-game-segment">
+                      <div className="dogcake-segment-header">
+                        <span className="dogcake-segment-title">
+                          게임 {index + 1}
+                        </span>
+                        {gameSegments.length > 1 && (
+                          <button
+                            onClick={() => removeGameSegment(segment.id)}
+                            className="dogcake-remove-segment-btn"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="dogcake-segment-inputs">
+                        <div className="dogcake-time-input">
+                          <label>시작:</label>
+                          <input
+                            type="number"
+                            value={segment.startMinute}
+                            onChange={(e) =>
+                              updateGameSegment(
+                                segment.id,
+                                "startMinute",
+                                e.target.value
+                              )
+                            }
+                            min="0"
+                            max="1000"
+                          />
+                          <span>분</span>
+                        </div>
+
+                        <div className="dogcake-time-input">
+                          <label>종료:</label>
+                          <input
+                            type="number"
+                            value={segment.endMinute}
+                            onChange={(e) =>
+                              updateGameSegment(
+                                segment.id,
+                                "endMinute",
+                                e.target.value
+                              )
+                            }
+                            min={segment.startMinute + 1}
+                            max="1000"
+                          />
+                          <span>분</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={addGameSegment}
+                  className="dogcake-add-segment-btn"
+                >
+                  ➕ 게임 구간 추가
+                </button>
+              </div>
+            )}
+
+            {!useManualTime && (
+              <div className="dogcake-auto-mode-description">
+                <p>📺 자동으로 방송 카테고리 변경을 감지하여 분석합니다</p>
+                <p>• 저챗에서 게임으로 바뀔 때마다 저챗견 비율 계산</p>
+                <p>• 하루에 여러 게임을 하는 경우 모두 분석하여 평균 산출</p>
+              </div>
+            )}
+
+            <button
+              onClick={calculateChatDogRatio}
+              disabled={loading}
+              className="dogcake-calculate-button"
+            >
+              저챗견 비율 계산하기
+            </button>
+
+            {chatDogRatio !== null && (
+              <div className="dogcake-chatdog-result">
+                <div className="dogcake-ratio-display">
+                  <div className="dogcake-ratio-percentage">
+                    저챗견 비율:{" "}
+                    <strong>{(chatDogRatio * 100).toFixed(1)}%</strong>
+                  </div>
+                  {chatDogStats && (
+                    <div className="dogcake-ratio-details">
+                      <p>저챗 참여자: {chatDogStats.justChatParticipants}명</p>
+                      <p>
+                        게임 시작 후 사라진 사람:{" "}
+                        {chatDogStats.disappearedParticipants}명
+                      </p>
+                      <p>
+                        게임에서도 채팅한 사람: {chatDogStats.gameParticipants}
+                        명
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {stats.length > 0 && (
           <div className="dogcake-stats-container">

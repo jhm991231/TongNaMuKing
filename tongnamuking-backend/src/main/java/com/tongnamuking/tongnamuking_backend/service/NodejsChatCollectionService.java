@@ -38,8 +38,8 @@ public class NodejsChatCollectionService {
             
             // Node.js 채팅 수집기 실행
             ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("node", "index.js", channelId);
-            processBuilder.directory(new java.io.File("../chat-collector"));
+            processBuilder.command("/usr/bin/node", "/app/chat-collector/index.js", channelId);
+            processBuilder.directory(new java.io.File("/app"));
             processBuilder.redirectErrorStream(true);
             
             Process process = processBuilder.start();

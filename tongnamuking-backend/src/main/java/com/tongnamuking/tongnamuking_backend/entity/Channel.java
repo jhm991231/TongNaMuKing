@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "channels")
@@ -22,4 +23,11 @@ public class Channel {
     private String displayName;
     
     private String description;
+    
+    // 실시간 라이브 추적 필드들
+    private Boolean isCurrentlyLive = false;
+    
+    private LocalDateTime liveStartTime;
+    
+    private String chzzkChannelId; // Chzzk API 호출용 채널 ID
 }

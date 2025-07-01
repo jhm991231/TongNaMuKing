@@ -99,6 +99,10 @@ function App() {
   };
 
   const selectChannel = async (channel) => {
+    // 이전 데이터 즉시 초기화
+    setStats([]);
+    setLoading(true);
+    
     setChannelName(channel.channelName);
     setSelectedChannelId(channel.channelId);
     setShowSearchResults(false);
@@ -108,8 +112,8 @@ function App() {
       (prev) => new Map(prev.set(channel.channelId, channel.channelName))
     );
 
-    // 채널 선택 시 기존 순위 초기 로드
-    setTimeout(() => fetchChatStats(), 100);
+    // 즉시 새로운 데이터 로드 (채널명 직접 전달)
+    await fetchChatStats(channel.channelName);
   };
 
   const startChatCollection = async (channelId) => {
@@ -253,15 +257,16 @@ function App() {
     }
   };
 
-  const fetchChatStats = async () => {
-    if (!channelName.trim()) return;
+  const fetchChatStats = async (targetChannelName = null) => {
+    const nameToUse = targetChannelName || channelName;
+    if (!nameToUse.trim()) return;
 
     setLoading(true);
     try {
       const url =
         timeRange > 0
-          ? `http://localhost:8080/api/chat-stats/channel/${channelName}?hours=${timeRange}`
-          : `http://localhost:8080/api/chat-stats/channel/${channelName}`;
+          ? `http://localhost:8080/api/chat-stats/channel/${nameToUse}?hours=${timeRange}`
+          : `http://localhost:8080/api/chat-stats/channel/${nameToUse}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -272,6 +277,7 @@ function App() {
       setLoading(false);
     }
   };
+
 
   return (
     <>
@@ -293,7 +299,26 @@ function App() {
           <div className="collector-list-fixed">
             {Array.from(activeCollectors).map((channelId) => (
               <div key={channelId} className="collector-item-fixed">
-                <span className="channel-name-fixed">
+                <span 
+                  className="channel-name-fixed clickable-channel"
+                  onClick={async () => {
+                    const channelName = channelIdToName.get(channelId);
+                    if (channelName) {
+                      // 이전 데이터 즉시 초기화
+                      setStats([]);
+                      setLoading(true);
+                      
+                      // 해당 채널명으로 설정
+                      setChannelName(channelName);
+                      setSelectedChannelId(channelId);
+                      setShowSearchResults(false);
+                      
+                      // 즉시 새로운 데이터 로드 (채널명 직접 전달)
+                      await fetchChatStats(channelName);
+                    }
+                  }}
+                  title={`${channelIdToName.get(channelId) || channelId} 채팅 순위 보기`}
+                >
                   {channelIdToName.get(channelId) ||
                     `${channelId.substring(0, 8)}...`}
                 </span>
@@ -383,9 +408,10 @@ function App() {
             className="time-select"
           >
             <option value={0}>전체 기간</option>
+            <option value={0.5}>최근 30분</option>
             <option value={1}>최근 1시간</option>
-            <option value={24}>최근 24시간</option>
-            <option value={168}>최근 7일</option>
+            <option value={3}>최근 3시간</option>
+            <option value={5}>최근 5시간</option>
           </select>
 
           <button
@@ -411,7 +437,7 @@ function App() {
           </button>
         </div>
 
-        {stats.length > 0 && (
+        {!loading && stats.length > 0 && (
           <div className="stats-container">
             <div className="stats-header"></div>
             <div className="stats-list">
@@ -430,6 +456,12 @@ function App() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="loading-container">
+            <div>로딩 중...</div>
           </div>
         )}
       </div>

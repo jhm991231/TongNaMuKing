@@ -48,7 +48,7 @@ function AppRouter() {
               fontSize: "14px",
             }}
           >
-            다중 채널 순위
+            다른 채널 검색하기
           </Link>
         </nav>
 
