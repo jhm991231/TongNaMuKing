@@ -42,13 +42,15 @@ public class ChatStatsService {
         return convertToResponseList(results);
     }
     
-    public List<ChatStatsResponse> getChatStatsByChannelAndTimeRange(String channelName, int hours) {
+    public List<ChatStatsResponse> getChatStatsByChannelAndTimeRange(String channelName, double hours) {
         Optional<Channel> channel = channelRepository.findByChannelName(channelName);
         if (channel.isEmpty()) {
             return new ArrayList<>();
         }
         
-        LocalDateTime startTime = LocalDateTime.now().minusHours(hours);
+        // hours를 분으로 변환하여 더 정확한 시간 계산
+        long minutes = Math.round(hours * 60);
+        LocalDateTime startTime = LocalDateTime.now().minusMinutes(minutes);
         List<Object[]> results = chatMessageRepository.findChatStatsByChannelAndTimeRange(
             channel.get().getId(), startTime);
         return convertToResponseList(results);

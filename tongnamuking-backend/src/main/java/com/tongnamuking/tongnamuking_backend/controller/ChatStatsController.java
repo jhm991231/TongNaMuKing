@@ -33,7 +33,7 @@ public class ChatStatsController {
     })
     public ResponseEntity<List<ChatStatsResponse>> getChatStatsByChannel(
             @Parameter(description = "채널명", required = true) @PathVariable String channelName,
-            @Parameter(description = "조회할 시간 범위 (시간 단위, 0이면 전체)") @RequestParam(defaultValue = "0") int hours) {
+            @Parameter(description = "조회할 시간 범위 (시간 단위, 0이면 전체)") @RequestParam(defaultValue = "0") double hours) {
         
         List<ChatStatsResponse> stats;
         if (hours > 0) {

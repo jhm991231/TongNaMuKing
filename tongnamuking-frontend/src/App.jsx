@@ -14,7 +14,7 @@ function App() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [maxCollectors, setMaxCollectors] = useState(3);
   const [channelIdToName, setChannelIdToName] = useState(new Map());
-  
+
   // 독케익 채널 ID (멀티채널 앱에서 제외)
   const DOGCAKE_CHANNEL_ID = "9c0c6780aa8f2a7d70c4bf2bb3c292c9";
 
@@ -105,7 +105,7 @@ function App() {
     // 이전 데이터 즉시 초기화
     setStats([]);
     setLoading(true);
-    
+
     setChannelName(channel.channelName);
     setSelectedChannelId(channel.channelId);
     setShowSearchResults(false);
@@ -281,7 +281,6 @@ function App() {
     }
   };
 
-
   return (
     <>
       {activeCollectors.size > 0 && (
@@ -302,7 +301,7 @@ function App() {
           <div className="collector-list-fixed">
             {Array.from(activeCollectors).map((channelId) => (
               <div key={channelId} className="collector-item-fixed">
-                <span 
+                <span
                   className="channel-name-fixed clickable-channel"
                   onClick={async () => {
                     const channelName = channelIdToName.get(channelId);
@@ -310,17 +309,19 @@ function App() {
                       // 이전 데이터 즉시 초기화
                       setStats([]);
                       setLoading(true);
-                      
+
                       // 해당 채널명으로 설정
                       setChannelName(channelName);
                       setSelectedChannelId(channelId);
                       setShowSearchResults(false);
-                      
+
                       // 즉시 새로운 데이터 로드 (채널명 직접 전달)
                       await fetchChatStats(channelName);
                     }
                   }}
-                  title={`${channelIdToName.get(channelId) || channelId} 채팅 순위 보기`}
+                  title={`${
+                    channelIdToName.get(channelId) || channelId
+                  } 채팅 순위 보기`}
                 >
                   {channelIdToName.get(channelId) ||
                     `${channelId.substring(0, 8)}...`}
@@ -411,10 +412,10 @@ function App() {
             className="time-select"
           >
             <option value={0}>전체 기간</option>
+            <option value={5 / 60}>최근 5분</option>
+            <option value={10 / 60}>최근 10분</option>
             <option value={0.5}>최근 30분</option>
             <option value={1}>최근 1시간</option>
-            <option value={3}>최근 3시간</option>
-            <option value={5}>최근 5시간</option>
           </select>
 
           <button
