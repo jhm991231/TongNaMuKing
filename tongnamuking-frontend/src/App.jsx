@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
+// API 기본 URL 환경변수로 설정
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
 function App() {
   const [channelName, setChannelName] = useState("");
   const [stats, setStats] = useState([]);
@@ -74,7 +77,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/channels/search?query=${encodeURIComponent(
+        `${API_BASE_URL}/api/channels/search?query=${encodeURIComponent(
           query
         )}`
       );
@@ -128,7 +131,7 @@ function App() {
   const startChatCollection = async (channelId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/chat-collection/start/${channelId}`,
+        `${API_BASE_URL}/api/chat-collection/start/${channelId}`,
         {
           method: "POST",
         }
@@ -153,7 +156,7 @@ function App() {
   const stopChatCollection = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/chat-collection/stop",
+        `${API_BASE_URL}/api/chat-collection/stop`,
         {
           method: "POST",
         }
@@ -176,7 +179,7 @@ function App() {
   const checkCollectionStatus = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/chat-collection/status"
+        `${API_BASE_URL}/api/chat-collection/status`
       );
       const data = await response.json();
       setIsCollecting(data.isCollecting);
@@ -189,7 +192,7 @@ function App() {
   const loadActiveCollectors = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/multi-channel-collection/status",
+        `${API_BASE_URL}/api/multi-channel-collection/status`,
         {
           credentials: "include", // 세션 쿠키 포함
         }
@@ -203,7 +206,7 @@ function App() {
         for (const channelId of data.activeChannels) {
           try {
             const channelResponse = await fetch(
-              `http://localhost:8080/api/channels/${channelId}/info`
+              `${API_BASE_URL}/api/channels/${channelId}/info`
             );
             const channelData = await channelResponse.json();
             if (channelData && channelData.channelName) {
@@ -226,7 +229,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/multi-channel-collection/start/${selectedChannelId}`,
+        `${API_BASE_URL}/api/multi-channel-collection/start/${selectedChannelId}`,
         {
           method: "POST",
           credentials: "include", // 세션 쿠키 포함
@@ -251,7 +254,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/multi-channel-collection/stop/${selectedChannelId}`,
+        `${API_BASE_URL}/api/multi-channel-collection/stop/${selectedChannelId}`,
         {
           method: "POST",
           credentials: "include", // 세션 쿠키 포함
@@ -274,7 +277,7 @@ function App() {
   // 핑 관련 함수들
   const sendPing = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/chat/ping", {
+      const response = await fetch(`${API_BASE_URL}/api/chat/ping`, {
         method: "GET",
         credentials: "include", // 중요: 세션 쿠키 포함
       });
@@ -323,8 +326,8 @@ function App() {
     try {
       const url =
         timeRange > 0
-          ? `http://localhost:8080/api/chat-stats/session/channel/${nameToUse}?hours=${timeRange}`
-          : `http://localhost:8080/api/chat-stats/session/channel/${nameToUse}`;
+          ? `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}?hours=${timeRange}`
+          : `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}`;
 
       const response = await fetch(url, {
         credentials: "include", // 세션 쿠키 포함
@@ -385,20 +388,34 @@ function App() {
                 </span>
                 <button
                   className="stop-small-button-fixed"
-                  onClick={() => {
-                    fetch(
-                      `http://localhost:8080/api/multi-channel-collection/stop/${channelId}`,
-                      {
-                        method: "POST",
-                        credentials: "include", // 세션 쿠키 포함
-                      }
-                    )
-                      .then((res) => res.json())
-                      .then((data) => {
-                        if (data.success) {
-                          setActiveCollectors(new Set(data.activeChannels));
+                  onClick={async () => {
+                    console.log(`🔴 X버튼 클릭: ${channelId}`);
+                    try {
+                      const response = await fetch(
+                        `${API_BASE_URL}/api/multi-channel-collection/stop/${channelId}`,
+                        {
+                          method: "POST",
+                          credentials: "include", // 세션 쿠키 포함
                         }
-                      });
+                      );
+                      
+                      console.log(`📡 응답 상태: ${response.status}`);
+                      console.log(`🍪 응답 헤더:`, Object.fromEntries(response.headers.entries()));
+                      
+                      const data = await response.json();
+                      console.log(`📄 응답 데이터:`, data);
+                      
+                      if (data.success) {
+                        setActiveCollectors(new Set(data.activeChannels));
+                        console.log(`✅ 수집 중지 성공`);
+                      } else {
+                        console.error(`❌ 수집 중지 실패: ${data.message}`);
+                        alert(`수집 중지 실패: ${data.message}`);
+                      }
+                    } catch (error) {
+                      console.error(`💥 X버튼 에러:`, error);
+                      alert(`X버튼 오류: ${error.message}`);
+                    }
                   }}
                 >
                   ✕

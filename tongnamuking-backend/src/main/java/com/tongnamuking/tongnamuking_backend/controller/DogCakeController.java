@@ -16,7 +16,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/dogcake-collection")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 @Tag(name = "독케익 전용 수집", description = "독케익 채널 전용 채팅 수집 관리 API")
 public class DogCakeController {
     

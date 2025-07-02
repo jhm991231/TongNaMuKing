@@ -9,7 +9,7 @@ class ChatCollector {
     this.channelId = null;
     this.channelName = null;
     this.sessionId = null;
-    this.backendUrl = "http://localhost:8080";
+    this.backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
     this.currentCategory = null;
     this.categoryCheckInterval = null;
   }

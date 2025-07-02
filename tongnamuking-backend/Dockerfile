@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y curl && \
 # Copy built jar file
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Install chat-collector dependencies (will be available via volume mount)
+# Create chat-collector directory (files will be mounted via volume)
 RUN mkdir -p /app/chat-collector
 
 # Expose port 8080

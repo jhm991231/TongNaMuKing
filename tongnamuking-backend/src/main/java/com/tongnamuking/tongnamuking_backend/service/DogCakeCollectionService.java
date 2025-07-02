@@ -30,7 +30,7 @@ public class DogCakeCollectionService {
             
             // 개발/운영 환경에 따른 경로 설정
             String os = System.getProperty("os.name").toLowerCase();
-            String nodeCommand = os.contains("win") ? "node" : "/usr/bin/node";
+            String nodeCommand = "node"; // PATH에서 node 찾기
             String scriptPath = os.contains("win") ? 
                 "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing\\chat-collector\\index.js" : 
                 "/app/chat-collector/index.js";

@@ -27,10 +27,12 @@ services:
     depends_on:
       - mysql
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tongnamuking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 1234
+      DATABASE_URL: jdbc:mysql://mysql:3306/tongnamuking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: 1234
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+      BACKEND_URL: http://backend:8080
     ports:
       - "8080:8080"
     networks:
@@ -38,6 +40,14 @@ services:
     restart: unless-stopped
     volumes:
       - ./chat-collector:/app/chat-collector
+    # Install npm dependencies on container start
+    command: >
+      bash -c "
+        cd /app/chat-collector && 
+        if [ ! -d node_modules ]; then npm install; fi &&
+        cd /app &&
+        java -jar app.jar
+      "
 
   # React Frontend
   frontend:
@@ -46,7 +56,7 @@ services:
       dockerfile: Dockerfile
     container_name: tongnamuking-frontend
     ports:
-      - "80:80"
+      - "5173:80"
     networks:
       - tongnamuking-network
     restart: unless-stopped

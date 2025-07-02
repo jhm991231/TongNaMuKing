@@ -58,7 +58,7 @@ public class MultiChannelCollectionService {
             
             // 개발/운영 환경에 따른 경로 설정
             String os = System.getProperty("os.name").toLowerCase();
-            String nodeCommand = os.contains("win") ? "node" : "/usr/bin/node";
+            String nodeCommand = "node"; // PATH에서 node 찾기
             String scriptPath = os.contains("win") ? 
                 "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing\\chat-collector\\index.js" : 
                 "/app/chat-collector/index.js";
@@ -129,28 +129,16 @@ public class MultiChannelCollectionService {
                 long pid = process.pid();
                 log.info("채널 {} 프로세스 종료 시작 (PID: {})", channelId, pid);
                 
-                // 직접 시스템 명령어로 강제 종료 (WSL에서 Java 시그널이 제대로 작동하지 않음)
-                String os = System.getProperty("os.name").toLowerCase();
-                if (os.contains("linux") || os.contains("unix")) {
-                    log.info("시스템 명령어로 프로세스 {} 강제 종료", pid);
-                    
-                    // PID로 직접 강제 종료
-                    ProcessBuilder killPid = new ProcessBuilder("kill", "-9", String.valueOf(pid));
-                    Process killProcess = killPid.start();
-                    killProcess.waitFor(3, java.util.concurrent.TimeUnit.SECONDS);
-                    
-                    // 추가 안전장치: 관련 프로세스들도 정리
-                    ProcessBuilder killCmd1 = new ProcessBuilder("pkill", "-9", "-f", channelId);
-                    killCmd1.start().waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
-                    
-                    ProcessBuilder killCmd2 = new ProcessBuilder("pkill", "-9", "-f", sessionId);
-                    killCmd2.start().waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
-                    
-                    log.info("채널 {} 시스템 레벨 강제 종료 완료", channelId);
+                // Java 기본 프로세스 종료 사용 (크로스 플랫폼 호환)
+                log.info("Java 기본 방법으로 프로세스 {} 강제 종료", pid);
+                process.destroyForcibly();
+                
+                // 프로세스 종료 대기 (최대 5초)
+                boolean terminated = process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                if (terminated) {
+                    log.info("채널 {} 프로세스 정상 종료됨", channelId);
                 } else {
-                    // Windows에서는 기존 방식 사용
-                    process.destroyForcibly();
-                    process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                    log.warn("채널 {} 프로세스 종료 타임아웃 (5초)", channelId);
                 }
                 
                 log.info("멀티채널 {} 수집 중지됨 (세션: {})", channelId, sessionId);

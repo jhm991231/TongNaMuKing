@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import "./DogCakeApp.css";
+
+// API 기본 URL 환경변수로 설정
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 import dogcakeImage1 from "./assets/1.jpeg";
 import dogcakeImage2 from "./assets/20.jpeg";
 import dogRorong from "./assets/dogrorong.png";
@@ -41,7 +44,7 @@ function DogCakeApp() {
   const autoStartCollection = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/dogcake-collection/status"
+        `${API_BASE_URL}/api/dogcake-collection/status`
       );
       const data = await response.json();
       const isDogCakeCollecting = data.isCollecting;
@@ -77,7 +80,7 @@ function DogCakeApp() {
   const startChatCollection = async (showAlert = true) => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/dogcake-collection/start",
+        `${API_BASE_URL}/api/dogcake-collection/start`,
         {
           method: "POST",
         }
@@ -107,7 +110,7 @@ function DogCakeApp() {
   const stopChatCollection = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/dogcake-collection/stop",
+        `${API_BASE_URL}/api/dogcake-collection/stop`,
         {
           method: "POST",
         }
@@ -129,7 +132,7 @@ function DogCakeApp() {
   const checkCollectionStatus = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/chat-collection/status"
+        `${API_BASE_URL}/api/chat-collection/status`
       );
       const data = await response.json();
       // 기존 Java 수집기 상태는 참고용으로만 사용
@@ -142,7 +145,7 @@ function DogCakeApp() {
   const checkNodejsCollectionStatus = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/dogcake-collection/status"
+        `${API_BASE_URL}/api/dogcake-collection/status`
       );
       const data = await response.json();
       // 독케익 수집 상태 확인
@@ -157,8 +160,8 @@ function DogCakeApp() {
     try {
       const url =
         timeRange > 0
-          ? `http://localhost:8080/api/chat-stats/channel/${DOGCAKE_CHANNEL.channelName}?hours=${timeRange}`
-          : `http://localhost:8080/api/chat-stats/channel/${DOGCAKE_CHANNEL.channelName}`;
+          ? `${API_BASE_URL}/api/chat-stats/channel/${DOGCAKE_CHANNEL.channelName}?hours=${timeRange}`
+          : `${API_BASE_URL}/api/chat-stats/channel/${DOGCAKE_CHANNEL.channelName}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -201,8 +204,8 @@ function DogCakeApp() {
   const calculateChatDogRatio = async () => {
     try {
       const url = useManualTime
-        ? `http://localhost:8080/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}/manual`
-        : `http://localhost:8080/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}?justChatDuration=${justChatDuration}&useManualTime=${useManualTime}`;
+        ? `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}/manual`
+        : `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}?justChatDuration=${justChatDuration}&useManualTime=${useManualTime}`;
 
       const requestOptions = useManualTime
         ? {

@@ -16,7 +16,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/multi-channel-collection")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 @Tag(name = "멀티채널 수집", description = "여러 채널의 채팅 수집 관리 API (독케익 제외)")
 @lombok.extern.slf4j.Slf4j
 public class MultiChannelController {
