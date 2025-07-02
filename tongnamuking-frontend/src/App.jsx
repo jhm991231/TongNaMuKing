@@ -322,7 +322,11 @@ function App() {
     const nameToUse = targetChannelName || channelName;
     if (!nameToUse.trim()) return;
 
-    setLoading(true);
+    // 첫 번째 로딩시에만 로딩 상태 표시
+    if (!stats || stats.length === 0) {
+      setLoading(true);
+    }
+    
     try {
       const url =
         timeRange > 0
@@ -337,7 +341,10 @@ function App() {
     } catch (error) {
       console.error("Error fetching chat stats:", error);
     } finally {
-      setLoading(false);
+      // 첫 번째 로딩시에만 로딩 상태 해제
+      if (!stats || stats.length === 0) {
+        setLoading(false);
+      }
     }
   };
 
