@@ -69,7 +69,7 @@ function DogCakeApp() {
       // 3초마다 순위 자동 업데이트
       interval = setInterval(() => {
         fetchChatStats();
-      }, 3000);
+      }, 10000);
     }
 
     return () => {

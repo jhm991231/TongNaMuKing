@@ -60,7 +60,7 @@ function App() {
       // 현재 채널이 수집 중일 때만 3초마다 순위 자동 업데이트
       interval = setInterval(() => {
         fetchChatStats();
-      }, 3000);
+      }, 10000);
     }
 
     return () => {
@@ -298,7 +298,7 @@ function App() {
     sendPing();
     
     // 30초마다 핑 전송
-    const interval = setInterval(sendPing, 30000);
+    const interval = setInterval(sendPing, 100000);
     setPingInterval(interval);
     console.log("Ping started - every 30 seconds");
   };
