@@ -24,6 +24,18 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
            "ORDER BY COUNT(cm.id) DESC")
     List<Object[]> findChatStatsByChannelAndTimeRange(@Param("channelId") Long channelId, @Param("startTime") LocalDateTime startTime);
     
+    @Query("SELECT cm.user.id, cm.user.username, cm.user.displayName, COUNT(cm.id) as messageCount " +
+           "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.sessionId = :sessionId " +
+           "GROUP BY cm.user.id, cm.user.username, cm.user.displayName " +
+           "ORDER BY COUNT(cm.id) DESC")
+    List<Object[]> findChatStatsByChannelAndSession(@Param("channelId") Long channelId, @Param("sessionId") String sessionId);
+    
+    @Query("SELECT cm.user.id, cm.user.username, cm.user.displayName, COUNT(cm.id) as messageCount " +
+           "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.sessionId = :sessionId AND cm.timestamp >= :startTime " +
+           "GROUP BY cm.user.id, cm.user.username, cm.user.displayName " +
+           "ORDER BY COUNT(cm.id) DESC")
+    List<Object[]> findChatStatsByChannelSessionAndTimeRange(@Param("channelId") Long channelId, @Param("sessionId") String sessionId, @Param("startTime") LocalDateTime startTime);
+    
     // 저챗견 비율 계산을 위한 쿼리들
     @Query("SELECT DISTINCT cm.user.id " +
            "FROM ChatMessage cm WHERE cm.channel.id = :channelId " +
@@ -48,4 +60,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
            "AND cm.timestamp >= :startTime")
     LocalDateTime findOldestMessageTimeByChannel(@Param("channelId") Long channelId, 
                                                 @Param("startTime") LocalDateTime startTime);
+    
+    // 세션별 채팅 메시지 삭제
+    void deleteBySessionId(String sessionId);
 }

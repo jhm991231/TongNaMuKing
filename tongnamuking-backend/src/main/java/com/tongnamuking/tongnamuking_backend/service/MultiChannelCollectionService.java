@@ -1,6 +1,7 @@
 package com.tongnamuking.tongnamuking_backend.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -18,8 +19,12 @@ public class MultiChannelCollectionService {
     
     // 세션별 수집기 관리: sessionId -> (channelId -> Process)
     private final Map<String, Map<String, Process>> userCollections = new ConcurrentHashMap<>();
+    
+    // 세션별 마지막 활동 시간 (핑 기반)
+    private final Map<String, Long> sessionLastActivity = new ConcurrentHashMap<>();
+    
     private final int MAX_COLLECTORS_PER_USER = 3;
-    private static final String DOGCAKE_CHANNEL_ID = "9c0c6780aa8f2a7d70c4bf2bb3c292c9";
+    private static final String DOGCAKE_CHANNEL_ID = "b68af124ae2f1743a1dcbf5e2ab41e0b";
     
     public boolean startCollection(String sessionId, String channelId) {
         // 독케익 채널은 멀티채널 시스템에서 수집하지 않음
@@ -61,12 +66,15 @@ public class MultiChannelCollectionService {
                 "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing" : 
                 "/app";
             
-            processBuilder.command(nodeCommand, scriptPath, channelId);
+            processBuilder.command(nodeCommand, scriptPath, channelId, sessionId);
             processBuilder.directory(new java.io.File(workingDir));
             processBuilder.redirectErrorStream(true);
             
             Process process = processBuilder.start();
             userChannels.put(channelId, process);
+            
+            // 세션 활동 시간 초기화
+            sessionLastActivity.put(sessionId, System.currentTimeMillis());
             
             // 비동기로 프로세스 출력 로깅
             CompletableFuture.runAsync(() -> {
@@ -118,17 +126,41 @@ public class MultiChannelCollectionService {
         
         try {
             if (process.isAlive()) {
-                process.destroyForcibly();
-                process.waitFor();
+                long pid = process.pid();
+                log.info("채널 {} 프로세스 종료 시작 (PID: {})", channelId, pid);
+                
+                // 직접 시스템 명령어로 강제 종료 (WSL에서 Java 시그널이 제대로 작동하지 않음)
+                String os = System.getProperty("os.name").toLowerCase();
+                if (os.contains("linux") || os.contains("unix")) {
+                    log.info("시스템 명령어로 프로세스 {} 강제 종료", pid);
+                    
+                    // PID로 직접 강제 종료
+                    ProcessBuilder killPid = new ProcessBuilder("kill", "-9", String.valueOf(pid));
+                    Process killProcess = killPid.start();
+                    killProcess.waitFor(3, java.util.concurrent.TimeUnit.SECONDS);
+                    
+                    // 추가 안전장치: 관련 프로세스들도 정리
+                    ProcessBuilder killCmd1 = new ProcessBuilder("pkill", "-9", "-f", channelId);
+                    killCmd1.start().waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
+                    
+                    ProcessBuilder killCmd2 = new ProcessBuilder("pkill", "-9", "-f", sessionId);
+                    killCmd2.start().waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
+                    
+                    log.info("채널 {} 시스템 레벨 강제 종료 완료", channelId);
+                } else {
+                    // Windows에서는 기존 방식 사용
+                    process.destroyForcibly();
+                    process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                }
+                
                 log.info("멀티채널 {} 수집 중지됨 (세션: {})", channelId, sessionId);
             }
             
             userChannels.remove(channelId);
             return true;
             
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("채널 {} 프로세스 종료 대기 중 인터럽트", channelId, e);
+        } catch (Exception e) {
+            log.error("채널 {} 프로세스 종료 중 오류", channelId, e);
             userChannels.remove(channelId);
             return false;
         }
@@ -181,5 +213,42 @@ public class MultiChannelCollectionService {
             return String.format("수집 중인 채널: %d/%d - %s", 
                     userChannels.size(), MAX_COLLECTORS_PER_USER, userChannels.keySet());
         }
+    }
+    
+    /**
+     * 세션 활동 시간 업데이트 (핑 수신시 호출)
+     */
+    public void updateSessionActivity(String sessionId) {
+        if (userCollections.containsKey(sessionId)) {
+            sessionLastActivity.put(sessionId, System.currentTimeMillis());
+            log.debug("세션 활동 업데이트: {}", sessionId);
+        }
+    }
+    
+    /**
+     * 30초마다 비활성 세션의 chat-collector 정리
+     */
+    @Scheduled(fixedRate = 30000)
+    public void cleanupInactiveSessions() {
+        long currentTime = System.currentTimeMillis();
+        long inactiveThreshold = 2 * 60 * 1000; // 2분 (테스트용)
+        
+        sessionLastActivity.entrySet().removeIf(entry -> {
+            String sessionId = entry.getKey();
+            long lastActivity = entry.getValue();
+            
+            if (currentTime - lastActivity > inactiveThreshold) {
+                log.info("비활성 세션 정리: {} ({}분 비활성)", sessionId, (currentTime - lastActivity) / 60000);
+                
+                // 해당 세션의 모든 chat-collector 종료
+                stopAllCollections(sessionId);
+                
+                // 세션 데이터 정리
+                userCollections.remove(sessionId);
+                
+                return true; // Map에서 제거
+            }
+            return false; // 유지
+        });
     }
 }

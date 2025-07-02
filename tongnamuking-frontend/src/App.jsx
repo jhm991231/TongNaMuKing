@@ -16,11 +16,17 @@ function App() {
   const [channelIdToName, setChannelIdToName] = useState(new Map());
 
   // 독케익 채널 ID (멀티채널 앱에서 제외)
-  const DOGCAKE_CHANNEL_ID = "9c0c6780aa8f2a7d70c4bf2bb3c292c9";
+  const DOGCAKE_CHANNEL_ID = "b68af124ae2f1743a1dcbf5e2ab41e0b";
+  
+  // 핑 관련 상태
+  const [pingInterval, setPingInterval] = useState(null);
 
   useEffect(() => {
     checkCollectionStatus();
     checkNodejsCollectionStatus();
+    
+    // 핑 시작
+    startPing();
   }, []);
 
   // 바깥 클릭 시 검색 결과 숨기기
@@ -259,6 +265,50 @@ function App() {
       alert("채팅 수집 중지 중 오류가 발생했습니다");
     }
   };
+
+  // 핑 관련 함수들
+  const sendPing = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/chat/ping", {
+        method: "GET",
+        credentials: "include", // 중요: 세션 쿠키 포함
+      });
+      const data = await response.json();
+      console.log("Ping sent:", data.sessionId);
+    } catch (error) {
+      console.error("Ping failed:", error);
+    }
+  };
+
+  const startPing = () => {
+    // 이미 실행중이면 중지
+    if (pingInterval) {
+      clearInterval(pingInterval);
+    }
+    
+    // 즉시 한 번 핑 전송
+    sendPing();
+    
+    // 30초마다 핑 전송
+    const interval = setInterval(sendPing, 30000);
+    setPingInterval(interval);
+    console.log("Ping started - every 30 seconds");
+  };
+
+  const stopPing = () => {
+    if (pingInterval) {
+      clearInterval(pingInterval);
+      setPingInterval(null);
+      console.log("Ping stopped");
+    }
+  };
+
+  // 컴포넌트 언마운트시 핑 정리
+  useEffect(() => {
+    return () => {
+      stopPing();
+    };
+  }, []);
 
   const fetchChatStats = async (targetChannelName = null) => {
     const nameToUse = targetChannelName || channelName;

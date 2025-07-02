@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/channels")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 @Tag(name = "채널 정보", description = "치지직 채널 검색 및 정보 조회 API")
 public class ChannelController {
     
@@ -43,17 +43,5 @@ public class ChannelController {
     public ChzzkChannelInfoResponse.Content getChannelInfo(
         @Parameter(description = "채널 ID", required = true) @PathVariable String channelId) {
         return chzzkService.getChannelInfo(channelId);
-    }
-    
-    @GetMapping("/{channelId}/live-detail")
-    @Operation(summary = "라이브 상세 정보 조회", description = "채널의 라이브 방송 상세 정보를 조회합니다.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "404", description = "라이브 정보를 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    public String getLiveDetail(
-        @Parameter(description = "채널 ID", required = true) @PathVariable String channelId) {
-        return chzzkService.getLiveDetail(channelId);
     }
 }

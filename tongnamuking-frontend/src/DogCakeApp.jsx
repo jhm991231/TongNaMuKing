@@ -26,7 +26,7 @@ function DogCakeApp() {
 
   // 독케익 채널 정보 (고정)
   const DOGCAKE_CHANNEL = {
-    channelId: "9c0c6780aa8f2a7d70c4bf2bb3c292c9", // 독케익 채널 ID
+    channelId: "b68af124ae2f1743a1dcbf5e2ab41e0b", // 독케익 채널 ID
     channelName: "독케익",
     displayName: "독케익",
   };

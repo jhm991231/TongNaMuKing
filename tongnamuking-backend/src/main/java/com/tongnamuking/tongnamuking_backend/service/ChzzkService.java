@@ -88,54 +88,6 @@ public class ChzzkService {
         }
     }
     
-    public String getLiveDetail(String channelId) {
-        // 1. 라이브 검색 API를 통해 해당 채널의 라이브 정보 찾기
-        try {
-            String searchUrl = CHZZK_API_BASE_URL + "/search/lives?keyword=" + channelId + "&offset=0&size=50";
-            System.out.println("Searching for live streams: " + searchUrl);
-            
-            String searchResponse = restTemplate.getForObject(searchUrl, String.class);
-            System.out.println("Live search response: " + searchResponse);
-            
-            return searchResponse;
-        } catch (Exception e) {
-            System.out.println("Live search failed: " + e.getMessage());
-        }
-        
-        // 2. 직접 라이브 ID를 구성해서 시도
-        try {
-            // 일반적으로 channelId를 기반으로 liveId가 만들어지는 경우가 있음
-            String directUrl = CHZZK_API_BASE_URL + "/lives/" + channelId + "/status";
-            System.out.println("Trying direct live status: " + directUrl);
-            
-            String response = restTemplate.getForObject(directUrl, String.class);
-            System.out.println("Direct live status response: " + response);
-            
-            return response;
-        } catch (Exception e) {
-            System.out.println("Direct live status failed: " + e.getMessage());
-        }
-        
-        // 3. 채널 이름으로 라이브 검색
-        ChzzkChannelInfoResponse.Content channelInfo = getChannelInfo(channelId);
-        if (channelInfo != null && channelInfo.isOpenLive()) {
-            try {
-                String nameSearchUrl = CHZZK_API_BASE_URL + "/search/lives?keyword=" + 
-                    java.net.URLEncoder.encode(channelInfo.getChannelName(), "UTF-8") + "&offset=0&size=10";
-                System.out.println("Searching by channel name: " + nameSearchUrl);
-                
-                String response = restTemplate.getForObject(nameSearchUrl, String.class);
-                System.out.println("Name search response: " + response);
-                
-                return response;
-            } catch (Exception e) {
-                System.out.println("Name search failed: " + e.getMessage());
-            }
-        }
-        
-        return null;
-    }
-    
     // 독케익 채널의 라이브 상태를 30초마다 체크
     @Scheduled(fixedRate = 30000)
     public void checkDogCakeLiveStatus() {

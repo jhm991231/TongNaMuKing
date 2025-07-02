@@ -4,6 +4,7 @@ import com.tongnamuking.tongnamuking_backend.dto.ChatStatsResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ChatDogRatioResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ManualGameSegmentRequest;
 import com.tongnamuking.tongnamuking_backend.service.ChatStatsService;
+import com.tongnamuking.tongnamuking_backend.service.MemoryChatDataService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,16 +14,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat-stats")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 @Tag(name = "채팅 통계", description = "채팅 통계 및 분석 API")
+@lombok.extern.slf4j.Slf4j
 public class ChatStatsController {
     
     private final ChatStatsService chatStatsService;
+    private final MemoryChatDataService memoryChatDataService;
     
     @GetMapping("/channel/{channelName}")
     @Operation(summary = "채널별 채팅 통계 조회", description = "지정된 채널의 채팅 통계를 조회합니다. 시간 범위를 지정할 수 있습니다.")
@@ -40,6 +45,32 @@ public class ChatStatsController {
             stats = chatStatsService.getChatStatsByChannelAndTimeRange(channelName, hours);
         } else {
             stats = chatStatsService.getChatStatsByChannel(channelName);
+        }
+        
+        return ResponseEntity.ok(stats);
+    }
+    
+    @GetMapping("/session/channel/{channelName}")
+    @Operation(summary = "세션별 채널 채팅 통계 조회", description = "지정된 세션의 채널별 채팅 통계를 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "통계 조회 성공"),
+        @ApiResponse(responseCode = "404", description = "채널을 찾을 수 없음"),
+        @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResponseEntity<List<ChatStatsResponse>> getChatStatsByChannelAndSession(
+            @Parameter(description = "채널명", required = true) @PathVariable String channelName,
+            @Parameter(description = "조회할 시간 범위 (시간 단위, 0이면 전체)") @RequestParam(defaultValue = "0") double hours,
+            @Parameter(description = "WebSocket 세션 ID") @RequestParam(required = false) String wsSessionId,
+            HttpSession session) {
+        
+        String sessionId = wsSessionId != null ? wsSessionId : session.getId();
+        log.info("채팅 통계 조회: 채널={}, 세션={}, WS세션={}", channelName, sessionId, wsSessionId);
+        
+        List<ChatStatsResponse> stats;
+        if (hours > 0) {
+            stats = memoryChatDataService.getChatStatsByChannelAndTimeRange(sessionId, channelName, hours);
+        } else {
+            stats = memoryChatDataService.getChatStatsByChannel(sessionId, channelName);
         }
         
         return ResponseEntity.ok(stats);
@@ -115,5 +146,11 @@ public class ChatStatsController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("데이터 삭제 실패: " + e.getMessage());
         }
+    }
+    
+    @GetMapping("/memory-stats")
+    @Operation(summary = "메모리 통계 조회", description = "현재 메모리에 저장된 채팅 데이터 통계를 조회합니다.")
+    public ResponseEntity<Map<String, Object>> getMemoryStats() {
+        return ResponseEntity.ok(memoryChatDataService.getMemoryStats());
     }
 }

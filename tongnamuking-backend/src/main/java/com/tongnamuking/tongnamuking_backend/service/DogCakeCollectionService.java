@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class DogCakeCollectionService {
     
-    private static final String DOGCAKE_CHANNEL_ID = "9c0c6780aa8f2a7d70c4bf2bb3c292c9";
+    private static final String DOGCAKE_CHANNEL_ID = "b68af124ae2f1743a1dcbf5e2ab41e0b";
     private Process dogCakeProcess;
     
     public boolean startDogCakeCollection() {
@@ -38,7 +38,9 @@ public class DogCakeCollectionService {
                 "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing" : 
                 "/app";
             
-            processBuilder.command(nodeCommand, scriptPath, DOGCAKE_CHANNEL_ID);
+            // 독케익 전용 세션 ID 생성
+            String sessionId = "DOGCAKE_SESSION";
+            processBuilder.command(nodeCommand, scriptPath, DOGCAKE_CHANNEL_ID, sessionId);
             processBuilder.directory(new java.io.File(workingDir));
             processBuilder.redirectErrorStream(true);
             

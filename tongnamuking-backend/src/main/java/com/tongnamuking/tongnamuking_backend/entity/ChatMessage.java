@@ -27,6 +27,9 @@ public class ChatMessage {
     @Column(nullable = false, length = 1000)
     private String message;
     
+    @Column(name = "session_id", length = 255)
+    private String sessionId;
+    
     @Column(nullable = false)
     private LocalDateTime timestamp;
     

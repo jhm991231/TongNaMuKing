@@ -22,13 +22,12 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     
     @Transactional
-    public void addChatMessage(String username, String displayName, String channelName, String message) {
+    public void addChatMessage(String username, String channelName, String message, String sessionId) {
         
         User user = userRepository.findByUsername(username)
             .orElseGet(() -> {
                 User newUser = new User();
                 newUser.setUsername(username);
-                newUser.setDisplayName(displayName);
                 newUser.setTotalChatCount(0);
                 return userRepository.save(newUser);
             });
@@ -51,6 +50,7 @@ public class ChatService {
         chatMessage.setUser(user);
         chatMessage.setChannel(channel);
         chatMessage.setMessage(message);
+        chatMessage.setSessionId(sessionId);
         chatMessage.setTimestamp(LocalDateTime.now());
         chatMessageRepository.save(chatMessage);
         

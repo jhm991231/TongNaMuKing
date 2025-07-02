@@ -9,6 +9,7 @@ import com.tongnamuking.tongnamuking_backend.repository.ChannelRepository;
 import com.tongnamuking.tongnamuking_backend.repository.ChatMessageRepository;
 import com.tongnamuking.tongnamuking_backend.repository.CategoryChangeEventRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,7 @@ import com.tongnamuking.tongnamuking_backend.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChatStatsService {
     
     private final ChatMessageRepository chatMessageRepository;
@@ -54,6 +56,41 @@ public class ChatStatsService {
         List<Object[]> results = chatMessageRepository.findChatStatsByChannelAndTimeRange(
             channel.get().getId(), startTime);
         return convertToResponseList(results);
+    }
+    
+    public List<ChatStatsResponse> getChatStatsByChannelAndSession(String channelName, String sessionId) {
+        Optional<Channel> channel = channelRepository.findByChannelName(channelName);
+        if (channel.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        List<Object[]> results = chatMessageRepository.findChatStatsByChannelAndSession(channel.get().getId(), sessionId);
+        return convertToResponseList(results);
+    }
+    
+    public List<ChatStatsResponse> getChatStatsByChannelSessionAndTimeRange(String channelName, String sessionId, double hours) {
+        Optional<Channel> channel = channelRepository.findByChannelName(channelName);
+        if (channel.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // hours를 분으로 변환하여 더 정확한 시간 계산
+        long minutes = Math.round(hours * 60);
+        LocalDateTime startTime = LocalDateTime.now().minusMinutes(minutes);
+        List<Object[]> results = chatMessageRepository.findChatStatsByChannelSessionAndTimeRange(
+            channel.get().getId(), sessionId, startTime);
+        return convertToResponseList(results);
+    }
+    
+    @Transactional
+    public void deleteSessionData(String sessionId) {
+        try {
+            chatMessageRepository.deleteBySessionId(sessionId);
+            log.info("세션 {} 의 모든 채팅 데이터가 삭제되었습니다", sessionId);
+        } catch (Exception e) {
+            log.error("세션 {} 의 채팅 데이터 삭제 중 오류 발생", sessionId, e);
+            throw e;
+        }
     }
     
     private List<ChatStatsResponse> convertToResponseList(List<Object[]> results) {

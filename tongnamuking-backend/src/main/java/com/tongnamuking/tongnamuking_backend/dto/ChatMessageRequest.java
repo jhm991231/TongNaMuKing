@@ -7,9 +7,9 @@ public class ChatMessageRequest {
     private String type;          // "chat" 또는 "donation"
     private String channelId;
     private String channelName;   // 실제 채널명
+    private String sessionId;     // 세션 ID
     private String userId;
     private String username;
-    private String displayName;
     private String message;
     private String timestamp;
     private Boolean hidden;
