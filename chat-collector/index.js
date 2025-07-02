@@ -44,8 +44,10 @@ class ChatCollector {
       this.channelName = channel.channelName;
       this.sessionId = sessionId;
 
-      // 카테고리 모니터링 시작
-      this.startCategoryMonitoring(channelId);
+      // 카테고리 모니터링 시작 (독케익 전용)
+      if (sessionId === "DOGCAKE_SESSION") {
+        this.startCategoryMonitoring(channelId);
+      }
 
       console.log("채팅 수집이 시작되었습니다.");
 
@@ -58,8 +60,8 @@ class ChatCollector {
 
   setupEventListeners() {
     // 연결 성공
-    this.chat.on("connect", (chatChannelId) => {
-      console.log(`채팅방 연결 성공: ${chatChannelId}`);
+    this.chat.on("connect", () => {
+      console.log(`채팅방 연결 성공`);
     });
 
     // 일반 채팅 메시지
@@ -128,23 +130,19 @@ class ChatCollector {
     try {
       // 독케익 전용 수집기인지 판단 (세션ID로만)
       const isDogCake = data.sessionId === "DOGCAKE_SESSION";
-      
+
       // URL 선택: 독케익 전용이면 독케익 API, 아니면 범용 API
-      const endpoint = isDogCake 
+      const endpoint = isDogCake
         ? "/api/dogcake-collection/message"
         : "/api/chat/message/from-collector";
-      
+
       console.log(`메시지 전송: ${endpoint} (세션: ${data.sessionId})`);
-      
-      await axios.post(
-        `${this.backendUrl}${endpoint}`,
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+
+      await axios.post(`${this.backendUrl}${endpoint}`, data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
     } catch (error) {
       console.error("백엔드 전송 실패:", error.message);
     }
@@ -273,5 +271,7 @@ if (channelId && sessionId) {
   await collector.startCollection(channelId, sessionId);
 } else {
   console.log("사용법: node index.js <channelId> <sessionId>");
-  console.log("예시: node index.js a7e175625fdea5a7d98428302b7aa57f SESSION123");
+  console.log(
+    "예시: node index.js a7e175625fdea5a7d98428302b7aa57f SESSION123"
+  );
 }

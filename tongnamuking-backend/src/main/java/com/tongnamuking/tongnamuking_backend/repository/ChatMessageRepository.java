@@ -12,27 +12,27 @@ import java.util.List;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
     
-    @Query("SELECT cm.user.id, cm.user.username, cm.user.displayName, COUNT(cm.id) as messageCount " +
+    @Query("SELECT cm.user.id, cm.user.username, COUNT(cm.id) as messageCount " +
            "FROM ChatMessage cm WHERE cm.channel.id = :channelId " +
-           "GROUP BY cm.user.id, cm.user.username, cm.user.displayName " +
+           "GROUP BY cm.user.id, cm.user.username " +
            "ORDER BY COUNT(cm.id) DESC")
     List<Object[]> findChatStatsByChannel(@Param("channelId") Long channelId);
     
-    @Query("SELECT cm.user.id, cm.user.username, cm.user.displayName, COUNT(cm.id) as messageCount " +
+    @Query("SELECT cm.user.id, cm.user.username, COUNT(cm.id) as messageCount " +
            "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.timestamp >= :startTime " +
-           "GROUP BY cm.user.id, cm.user.username, cm.user.displayName " +
+           "GROUP BY cm.user.id, cm.user.username " +
            "ORDER BY COUNT(cm.id) DESC")
     List<Object[]> findChatStatsByChannelAndTimeRange(@Param("channelId") Long channelId, @Param("startTime") LocalDateTime startTime);
     
-    @Query("SELECT cm.user.id, cm.user.username, cm.user.displayName, COUNT(cm.id) as messageCount " +
+    @Query("SELECT cm.user.id, cm.user.username, COUNT(cm.id) as messageCount " +
            "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.sessionId = :sessionId " +
-           "GROUP BY cm.user.id, cm.user.username, cm.user.displayName " +
+           "GROUP BY cm.user.id, cm.user.username " +
            "ORDER BY COUNT(cm.id) DESC")
     List<Object[]> findChatStatsByChannelAndSession(@Param("channelId") Long channelId, @Param("sessionId") String sessionId);
     
-    @Query("SELECT cm.user.id, cm.user.username, cm.user.displayName, COUNT(cm.id) as messageCount " +
+    @Query("SELECT cm.user.id, cm.user.username, COUNT(cm.id) as messageCount " +
            "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.sessionId = :sessionId AND cm.timestamp >= :startTime " +
-           "GROUP BY cm.user.id, cm.user.username, cm.user.displayName " +
+           "GROUP BY cm.user.id, cm.user.username " +
            "ORDER BY COUNT(cm.id) DESC")
     List<Object[]> findChatStatsByChannelSessionAndTimeRange(@Param("channelId") Long channelId, @Param("sessionId") String sessionId, @Param("startTime") LocalDateTime startTime);
     

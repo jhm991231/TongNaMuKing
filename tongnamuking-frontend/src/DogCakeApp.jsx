@@ -454,7 +454,7 @@ function DogCakeApp() {
                   </div>
                   <div className="dogcake-user-info">
                     <div className="dogcake-display-name">
-                      {stat.displayName}
+                      {stat.username}
                     </div>
                   </div>
                   <div className="dogcake-message-count">

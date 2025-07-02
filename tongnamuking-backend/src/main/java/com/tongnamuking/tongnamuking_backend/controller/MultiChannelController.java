@@ -31,16 +31,13 @@ public class MultiChannelController {
     })
     public ResponseEntity<Map<String, Object>> startCollection(
         @Parameter(description = "수집할 채널 ID", required = true) @PathVariable String channelId,
-        @Parameter(description = "WebSocket 세션 ID") @RequestParam(required = false) String sessionId,
         HttpSession session) {
         
-        // WebSocket 세션 ID가 있으면 사용, 없으면 HTTP 세션 ID 사용
-        if (sessionId == null || sessionId.trim().isEmpty()) {
-            sessionId = session.getId();
-        }
-        System.out.println("=== 수집 시작 요청 ===");
-        System.out.println("세션 ID: " + sessionId);
-        System.out.println("채널 ID: " + channelId);
+        String sessionId = session.getId();
+        log.info("=== 수집 시작 요청 ===");
+        log.info("세션 ID: {}", sessionId);
+        log.info("채널 ID: {}", channelId);
+        log.info("현재 수집 중인 채널들: {}", multiChannelCollectionService.getActiveChannels(sessionId));
         boolean success = multiChannelCollectionService.startCollection(sessionId, channelId);
         
         String message;
@@ -72,11 +69,11 @@ public class MultiChannelController {
     })
     public ResponseEntity<Map<String, Object>> stopCollection(
         @Parameter(description = "중지할 채널 ID", required = true) @PathVariable String channelId,
-        @Parameter(description = "WebSocket 세션 ID") @RequestParam(required = false) String wsSessionId,
         HttpSession session) {
-        String sessionId = wsSessionId != null ? wsSessionId : session.getId();
+        
+        String sessionId = session.getId();
         log.info("=== 수집 중지 요청 ===");
-        log.info("세션 ID: {}, WS세션: {}", sessionId, wsSessionId);
+        log.info("세션 ID: {}", sessionId);
         log.info("채널 ID: {}", channelId);
         log.info("현재 수집 중인 채널들: {}", multiChannelCollectionService.getActiveChannels(sessionId));
         boolean success = multiChannelCollectionService.stopCollection(sessionId, channelId);
@@ -114,10 +111,9 @@ public class MultiChannelController {
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<Map<String, Object>> getStatus(
-            @RequestParam(required = false) String wsSessionId,
             HttpSession session) {
-        String sessionId = wsSessionId != null ? wsSessionId : session.getId();
-        log.info("수집 상태 조회: 세션={}, WS세션={}", sessionId, wsSessionId);
+        String sessionId = session.getId();
+        log.info("수집 상태 조회: 세션={}", sessionId);
         
         return ResponseEntity.ok(Map.of(
             "isAnyCollecting", multiChannelCollectionService.isAnyCollecting(sessionId),

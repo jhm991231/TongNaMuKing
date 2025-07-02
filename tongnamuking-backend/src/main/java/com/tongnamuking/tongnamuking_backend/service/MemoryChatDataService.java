@@ -156,7 +156,7 @@ public class MemoryChatDataService {
         
         for (ChatData chat : chatList) {
             UserStats stats = userStatsMap.computeIfAbsent(chat.username, 
-                k -> new UserStats(chat.username, chat.username));
+                k -> new UserStats(chat.username));
             stats.messageCount++;
         }
         
@@ -172,7 +172,6 @@ public class MemoryChatDataService {
             responses.add(new ChatStatsResponse(
                 (long) i, // userId (임시)
                 stats.username,
-                stats.displayName,
                 stats.messageCount,
                 i + 1 // rank
             ));
@@ -184,12 +183,10 @@ public class MemoryChatDataService {
     
     private static class UserStats {
         String username;
-        String displayName;
         long messageCount = 0;
         
-        UserStats(String username, String displayName) {
+        UserStats(String username) {
             this.username = username;
-            this.displayName = displayName;
         }
     }
     

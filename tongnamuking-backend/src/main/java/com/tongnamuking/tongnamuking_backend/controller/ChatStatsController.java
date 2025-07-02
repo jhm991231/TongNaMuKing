@@ -60,11 +60,10 @@ public class ChatStatsController {
     public ResponseEntity<List<ChatStatsResponse>> getChatStatsByChannelAndSession(
             @Parameter(description = "채널명", required = true) @PathVariable String channelName,
             @Parameter(description = "조회할 시간 범위 (시간 단위, 0이면 전체)") @RequestParam(defaultValue = "0") double hours,
-            @Parameter(description = "WebSocket 세션 ID") @RequestParam(required = false) String wsSessionId,
             HttpSession session) {
         
-        String sessionId = wsSessionId != null ? wsSessionId : session.getId();
-        log.info("채팅 통계 조회: 채널={}, 세션={}, WS세션={}", channelName, sessionId, wsSessionId);
+        String sessionId = session.getId();
+        log.info("채팅 통계 조회: 채널={}, 세션={}", channelName, sessionId);
         
         List<ChatStatsResponse> stats;
         if (hours > 0) {

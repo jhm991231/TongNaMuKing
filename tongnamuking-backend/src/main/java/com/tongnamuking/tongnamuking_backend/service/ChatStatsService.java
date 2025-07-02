@@ -100,10 +100,9 @@ public class ChatStatsService {
         for (Object[] result : results) {
             Long userId = (Long) result[0];
             String username = (String) result[1];
-            String displayName = (String) result[2];
-            Long messageCount = (Long) result[3];
+            Long messageCount = (Long) result[2];
             
-            responses.add(new ChatStatsResponse(userId, username, displayName, messageCount, rank));
+            responses.add(new ChatStatsResponse(userId, username, messageCount, rank));
             rank++;
         }
         
@@ -485,12 +484,10 @@ public class ChatStatsService {
         for (int i = 1; i <= 120; i++) {
             // 사용자 생성 또는 조회
             String username = "testuser" + i;
-            String displayName = "테스트유저" + i;
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> {
                         User newUser = new User();
                         newUser.setUsername(username);
-                        newUser.setDisplayName(displayName);
                         newUser.setTotalChatCount(0);
                         return userRepository.save(newUser);
                     });
@@ -540,12 +537,10 @@ public class ChatStatsService {
         // 저챗 참여자 150명
         for (int i = 1; i <= 150; i++) {
             String username = "testuser" + i;
-            String displayName = "테스트유저" + i;
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> {
                         User newUser = new User();
                         newUser.setUsername(username);
-                        newUser.setDisplayName(displayName);
                         newUser.setTotalChatCount(0);
                         return userRepository.save(newUser);
                     });
@@ -599,12 +594,10 @@ public class ChatStatsService {
         // 저챗 참여자 200명
         for (int i = 1; i <= 200; i++) {
             String username = "testuser" + i;
-            String displayName = "테스트유저" + i;
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> {
                         User newUser = new User();
                         newUser.setUsername(username);
-                        newUser.setDisplayName(displayName);
                         newUser.setTotalChatCount(0);
                         return userRepository.save(newUser);
                     });

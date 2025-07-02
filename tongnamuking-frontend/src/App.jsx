@@ -23,7 +23,7 @@ function App() {
 
   useEffect(() => {
     checkCollectionStatus();
-    checkNodejsCollectionStatus();
+    loadActiveCollectors();
     
     // 핑 시작
     startPing();
@@ -186,10 +186,13 @@ function App() {
     }
   };
 
-  const checkNodejsCollectionStatus = async () => {
+  const loadActiveCollectors = async () => {
     try {
       const response = await fetch(
-        "http://localhost:8080/api/multi-channel-collection/status"
+        "http://localhost:8080/api/multi-channel-collection/status",
+        {
+          credentials: "include", // 세션 쿠키 포함
+        }
       );
       const data = await response.json();
       setActiveCollectors(new Set(data.activeChannels));
@@ -214,7 +217,7 @@ function App() {
         }
       }
     } catch (error) {
-      console.error("Node.js 수집 상태 확인 실패:", error);
+      console.error("활성 수집기 로드 실패:", error);
     }
   };
 
@@ -226,6 +229,7 @@ function App() {
         `http://localhost:8080/api/multi-channel-collection/start/${selectedChannelId}`,
         {
           method: "POST",
+          credentials: "include", // 세션 쿠키 포함
         }
       );
       const data = await response.json();
@@ -250,6 +254,7 @@ function App() {
         `http://localhost:8080/api/multi-channel-collection/stop/${selectedChannelId}`,
         {
           method: "POST",
+          credentials: "include", // 세션 쿠키 포함
         }
       );
       const data = await response.json();
@@ -318,10 +323,12 @@ function App() {
     try {
       const url =
         timeRange > 0
-          ? `http://localhost:8080/api/chat-stats/channel/${nameToUse}?hours=${timeRange}`
-          : `http://localhost:8080/api/chat-stats/channel/${nameToUse}`;
+          ? `http://localhost:8080/api/chat-stats/session/channel/${nameToUse}?hours=${timeRange}`
+          : `http://localhost:8080/api/chat-stats/session/channel/${nameToUse}`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: "include", // 세션 쿠키 포함
+      });
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -383,6 +390,7 @@ function App() {
                       `http://localhost:8080/api/multi-channel-collection/stop/${channelId}`,
                       {
                         method: "POST",
+                        credentials: "include", // 세션 쿠키 포함
                       }
                     )
                       .then((res) => res.json())
@@ -504,7 +512,7 @@ function App() {
                     #{stat.rank}
                   </div>
                   <div className="user-info">
-                    <div className="display-name">{stat.displayName}</div>
+                    <div className="display-name">{stat.username}</div>
                   </div>
                   <div className="message-count">{stat.messageCount}개</div>
                 </div>

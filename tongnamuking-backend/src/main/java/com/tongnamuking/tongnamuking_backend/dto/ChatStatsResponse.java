@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 public class ChatStatsResponse {
     private Long userId;
     private String username;
-    private String displayName;
     private Long messageCount;
     private Integer rank;
 }
