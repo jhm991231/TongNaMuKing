@@ -333,13 +333,25 @@ function App() {
           ? `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}?hours=${timeRange}`
           : `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}`;
 
+      // 10초 타임아웃 설정
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch(url, {
         credentials: "include", // 세션 쿠키 포함
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       const data = await response.json();
       setStats(data);
     } catch (error) {
-      console.error("Error fetching chat stats:", error);
+      if (error.name === 'AbortError') {
+        console.error("API 요청 타임아웃:", error);
+        setStats([]); // 빈 배열로 설정하여 로딩 해제
+      } else {
+        console.error("Error fetching chat stats:", error);
+      }
     } finally {
       // 첫 번째 로딩시에만 로딩 상태 해제
       if (!stats || stats.length === 0) {

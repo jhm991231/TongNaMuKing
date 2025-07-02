@@ -357,12 +357,18 @@ html {
 }
 
 .stop-button {
-  background: #f44336;
-  color: white;
+  background: #f44336 !important;
+  color: white !important;
 }
 
-.stop-button:hover {
-  background: #d32f2f;
+.stop-button:hover:not(:disabled) {
+  background: #d32f2f !important;
+}
+
+.stop-button:disabled {
+  background: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed;
 }
 
 .collection-status {
