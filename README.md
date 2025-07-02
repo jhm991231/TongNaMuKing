@@ -12,7 +12,6 @@ TongNaMuKing은 치지직(Chzzk) 스트리밍 플랫폼의 실시간 채팅을 �
 - 📊 **채팅 통계**: 사용자별 채팅 횟수 순위 및 통계
 - 🐕 **독케익 전용 기능**: 독케익 채널 전용 수집 및 저챗견 비율 분석
 - 🔀 **멀티채널 지원**: 최대 3개 채널 동시 수집 (메모리 기반)
-- ⏰ **시간대별 분석**: 다양한 시간 범위별 통계 제공
 
 ## 🏗️ 시스템 아키텍처
 
@@ -245,13 +244,11 @@ docker-compose logs mysql
 
 ## 📞 문의
 
-- 개발자: [Your Name]
-- 이메일: [your.email@example.com]
-- 프로젝트 링크: [https://github.com/yourusername/TongNaMuKing](https://github.com/yourusername/TongNaMuKing)
+- 개발자: [정현민]
+- 이메일: [jhm991231@gmail.com]
+- 프로젝트 링크: [https://github.com/jhm991231/TongNaMuKing](https://github.com/jhm991231/TongNaMuKing)
 
 ---
 
 **⚠️ 주의사항**
-- 이 프로젝트는 개인/교육 목적으로 개발되었습니다
-- 치지직 API 사용 시 해당 플랫폼의 이용약관을 준수해주세요
 - 대량의 채팅 수집 시 서버 리소스를 고려해주세요
