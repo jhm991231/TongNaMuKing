@@ -357,12 +357,12 @@ html {
 }
 
 .stop-button {
-  background: #f44336 !important;
+  background: #c62828 !important;
   color: white !important;
 }
 
 .stop-button:hover:not(:disabled) {
-  background: #d32f2f !important;
+  background: #a52a2a !important;
 }
 
 .stop-button:disabled {
