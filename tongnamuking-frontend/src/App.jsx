@@ -79,7 +79,10 @@ function App() {
       const response = await fetch(
         `${API_BASE_URL}/api/channels/search?query=${encodeURIComponent(
           query
-        )}`
+        )}`,
+        {
+          credentials: "include"
+        }
       );
       const data = await response.json();
       console.log("Search query:", query);
@@ -134,6 +137,7 @@ function App() {
         `${API_BASE_URL}/api/chat-collection/start/${channelId}`,
         {
           method: "POST",
+          credentials: "include"
         }
       );
       const data = await response.json();
@@ -159,6 +163,7 @@ function App() {
         `${API_BASE_URL}/api/chat-collection/stop`,
         {
           method: "POST",
+          credentials: "include"
         }
       );
       const data = await response.json();
@@ -179,7 +184,10 @@ function App() {
   const checkCollectionStatus = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/chat-collection/status`
+        `${API_BASE_URL}/api/chat-collection/status`,
+        {
+          credentials: "include"
+        }
       );
       const data = await response.json();
       setIsCollecting(data.isCollecting);
@@ -206,7 +214,10 @@ function App() {
         for (const channelId of data.activeChannels) {
           try {
             const channelResponse = await fetch(
-              `${API_BASE_URL}/api/channels/${channelId}/info`
+              `${API_BASE_URL}/api/channels/${channelId}/info`,
+              {
+                credentials: "include"
+              }
             );
             const channelData = await channelResponse.json();
             if (channelData && channelData.channelName) {
