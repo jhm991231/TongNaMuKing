@@ -4,20 +4,10 @@
   text-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-}
-
-@media (max-width: 768px) {
-  .dogcake-app {
-    padding-top: 50px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dogcake-app {
-    padding-top: 45px;
-  }
+  min-height: 100vh;
+  padding-top: 500px;
 }
 
 .dogcake-app h1 {
@@ -640,110 +630,30 @@
   top: 40%;
   left: 8%;
   transform: translateY(-50%);
-  width: 300px;
-  height: 300px;
+  width: 500px;
+  height: 500px;
   object-fit: contain;
   z-index: 10;
   pointer-events: none;
   opacity: 0.7;
-}
-
-/* 화면이 넓을 때 캐릭터 크기 증가 */
-@media (min-width: 1400px) {
-  .dogcake-character-left {
-    width: 400px;
-    height: 400px;
-    opacity: 0.8;
-  }
-}
-
-/* 화면이 매우 넓을 때 캐릭터 크기 더 증가 */
-@media (min-width: 1800px) {
-  .dogcake-character-left {
-    width: 500px;
-    height: 500px;
-    opacity: 0.9;
-  }
-}
-
-/* 화면이 작을 때 캐릭터 크기 감소 */
-@media (max-width: 1200px) {
-  .dogcake-character-left {
-    width: 200px;
-    height: 200px;
-    opacity: 0.5;
-  }
-}
-
-/* 태블릿 크기에서 캐릭터 더 작게 */
-@media (max-width: 768px) {
-  .dogcake-character-left {
-    width: 150px;
-    height: 150px;
-    opacity: 0.3;
-    left: 2%;
-  }
-}
-
-/* 모바일에서는 캐릭터 숨김 */
-@media (max-width: 600px) {
-  .dogcake-character-left {
-    display: none;
-  }
 }
 
 .dogcake-character-right {
-  position: fixed;
+  position: absolute;
   top: 40%;
   right: 5.5%;
   transform: translateY(-50%);
-  width: 300px;
-  height: 300px;
+  width: 500px;
+  height: 500px;
   object-fit: contain;
   z-index: 10;
   pointer-events: none;
   opacity: 0.7;
 }
 
-/* 화면이 넓을 때 오른쪽 캐릭터 크기 증가 */
-@media (min-width: 1400px) {
-  .dogcake-character-right {
-    width: 400px;
-    height: 400px;
-    opacity: 0.8;
-  }
-}
-
-/* 화면이 매우 넓을 때 오른쪽 캐릭터 크기 더 증가 */
-@media (min-width: 1800px) {
-  .dogcake-character-right {
-    width: 600px;
-    height: 600px;
-    opacity: 0.9;
-  }
-}
-
-/* 화면이 작을 때 오른쪽 캐릭터 크기 감소 */
-@media (max-width: 1200px) {
-  .dogcake-character-right {
-    width: 200px;
-    height: 200px;
-    opacity: 0.5;
-  }
-}
-
-/* 태블릿 크기에서 오른쪽 캐릭터 더 작게 */
-@media (max-width: 768px) {
-  .dogcake-character-right {
-    width: 150px;
-    height: 150px;
-    opacity: 0.3;
-    right: 2%;
-  }
-}
-
-/* 모바일에서는 오른쪽 캐릭터도 숨김 */
-@media (max-width: 600px) {
+/* 모바일에서는 캐릭터 숨김 */
+@media (max-width: 480px) {
+  .dogcake-character-left,
   .dogcake-character-right {
     display: none;
   }
@@ -809,230 +719,5 @@
   }
   50% {
     opacity: 0.7;
-  }
-}
-
-/* 모바일 반응형 디자인 */
-@media (max-width: 768px) {
-  .dogcake-app {
-    padding: 1rem 1rem 40px 1rem;
-    max-width: 100%;
-  }
-  
-  .dogcake-app h1 {
-    font-size: 1.8rem;
-    margin: 0.5rem 0 1rem 0;
-    flex-direction: row;
-    gap: 0.3rem;
-  }
-  
-  .dogcake-logo {
-    width: 1.5em;
-    height: 1.5em;
-  }
-  
-  .dogcake-controls {
-    flex-direction: row;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  .dogcake-time-select {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 120px;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.85rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-  }
-  
-  .dogcake-chatdog-settings-button {
-    flex: 0 0 auto;
-    width: auto;
-    padding: 8px 12px !important;
-    font-size: 0.8rem !important;
-    white-space: nowrap;
-  }
-  
-  .dogcake-status-display {
-    flex: 1;
-    min-width: 120px;
-    text-align: center;
-  }
-  
-  .dogcake-loading,
-  .dogcake-collecting {
-    font-size: 0.85rem;
-  }
-  
-  .dogcake-error {
-    align-items: center;
-  }
-  
-  .dogcake-error-text {
-    font-size: 0.8rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .dogcake-retry-button {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-  }
-  
-  .dogcake-start-button,
-  .dogcake-stop-button {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-  }
-  
-  .dogcake-chatdog-settings-panel {
-    padding: 20px;
-    margin: 15px 0;
-    border-radius: 10px;
-  }
-  
-  .dogcake-chatdog-settings-panel h3 {
-    font-size: 1.2rem;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .dogcake-punch-icon {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .dogcake-game-segment {
-    padding: 12px;
-  }
-  
-  .dogcake-segment-inputs {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .dogcake-time-input {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
-  }
-  
-  .dogcake-time-input label {
-    min-width: auto;
-    text-align: center;
-  }
-  
-  .dogcake-time-input input {
-    width: 100%;
-    max-width: 120px;
-    margin: 0 auto;
-  }
-  
-  .dogcake-active-collectors-fixed {
-    display: none;
-  }
-  
-  .dogcake-stats-list {
-    max-width: 100%;
-  }
-  
-  .dogcake-stat-item {
-    padding: 0.75rem;
-    min-height: 60px;
-  }
-  
-  .dogcake-display-name {
-    font-size: 1.1rem;
-  }
-  
-  .dogcake-message-count {
-    font-size: 1.2rem;
-  }
-  
-  .dogcake-rank {
-    font-size: 1.1rem;
-    min-width: 40px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dogcake-app {
-    padding: 0.5rem 0.5rem 30px 0.5rem;
-  }
-  
-  .dogcake-app h1 {
-    font-size: 1.5rem;
-    flex-direction: row;
-  }
-  
-  .dogcake-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .dogcake-time-select,
-  .dogcake-chatdog-settings-button {
-    width: 100% !important;
-    min-width: auto !important;
-  }
-  
-  .dogcake-status-display {
-    width: 100%;
-    min-width: auto;
-  }
-  
-  .dogcake-logo {
-    width: 1.2em;
-    height: 1.2em;
-  }
-  
-  .dogcake-chatdog-settings-panel {
-    padding: 15px;
-  }
-  
-  .dogcake-time-select,
-  .dogcake-start-button,
-  .dogcake-stop-button {
-    padding: 0.5rem;
-    font-size: 0.9rem;
-  }
-  
-  .dogcake-stat-item {
-    padding: 0.5rem;
-    min-height: 50px;
-  }
-  
-  .dogcake-display-name {
-    font-size: 1rem;
-  }
-  
-  .dogcake-message-count {
-    font-size: 1.1rem;
-  }
-  
-  .dogcake-rank {
-    font-size: 1rem;
-    min-width: 35px;
-  }
-  
-  .dogcake-time-input-group label {
-    min-width: auto;
-    text-align: center;
-  }
-  
-  .dogcake-time-input-group {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  
-  .dogcake-time-input-group input {
-    width: 100%;
-    max-width: 120px;
-    margin: 0 auto;
   }
 }

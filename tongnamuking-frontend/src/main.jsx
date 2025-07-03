@@ -59,9 +59,11 @@ function AppRouter() {
             <Route path="/multi" element={<App />} />
           </Routes>
         </div>
-        
+
         <footer className="app-footer">
-          <p style={{ margin: 0 }}>버그제보 및 피드백 적극 환영 📧 jhm991231@gmail.com</p>
+          <p style={{ margin: 0 }}>
+            버그제보 및 피드백 적극 환영 📧 jhm991231@gmail.com
+          </p>
         </footer>
       </div>
     </Router>
