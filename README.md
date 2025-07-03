@@ -9,9 +9,10 @@ TongNaMuKing은 치지직(Chzzk) 스트리밍 플랫폼의 실시간 채팅을 �
 ### 주요 기능
 
 - 🔴 **실시간 채팅 수집**: 치지직 채널의 실시간 채팅 메시지 수집
-- 📊 **채팅 통계**: 사용자별 채팅 횟수 순위 및 통계
+- 📊 **채팅 통계**: 사용자별 채팅 횟수 순위 및 통계 분석
 - 🐕 **독케익 전용 기능**: 독케익 채널 전용 수집 및 저챗견 비율 분석
 - 🔀 **멀티채널 지원**: 최대 3개 채널 동시 수집 (메모리 기반)
+- 🔍 **채널 검색**: 치지직 플랫폼의 모든 채널 검색 및 수집
 
 ## 🏗️ 시스템 아키텍처
 
@@ -36,15 +37,14 @@ TongNaMuKing은 치지직(Chzzk) 스트리밍 플랫폼의 실시간 채팅을 �
 
 ```bash
 # 저장소 클론
-git clone <repository-url>
+git clone https://github.com/jhm991231/TongNaMuKing.git
 cd TongNaMuKing
 
 # Docker Compose로 전체 시스템 실행
 docker-compose up --build
 
 # 접속
-# - 독케익 전용: http://localhost:5173
-# - 다른 채널 검색: http://localhost:5173 (상단 토글)
+# - 웹 애플리케이션: http://localhost:5173
 # - API 문서: http://localhost:8080/swagger-ui.html
 ```
 
@@ -101,67 +101,69 @@ npm install
 
 ### Infrastructure
 - **Docker & Docker Compose** - 컨테이너화
-- **Nginx** - 프론트엔드 서빙
+- **Railway** - 클라우드 배포
+- **Vercel** - 프론트엔드 호스팅
 
 ## 📁 프로젝트 구조
 
 ```
 TongNaMuKing/
-├── tongnamuking-frontend/     # React 프론트엔드
+├── tongnamuking-frontend/      # React 프론트엔드
 │   ├── src/
-│   │   ├── App.jsx           # 멀티채널 앱
-│   │   └── DogCakeApp.jsx    # 독케익 전용 앱
+│   │   ├── App.jsx            # 멀티채널 앱
+│   │   └── DogCakeApp.jsx     # 독케익 전용 앱
 │   └── Dockerfile
-├── tongnamuking-backend/      # Spring Boot 백엔드
+├── tongnamuking-backend/       # Spring Boot 백엔드
 │   ├── src/main/java/
-│   │   ├── controller/       # REST API 컨트롤러
-│   │   ├── service/          # 비즈니스 로직
-│   │   ├── entity/           # JPA 엔티티
-│   │   └── repository/       # 데이터 접근
+│   │   ├── controller/        # REST API 컨트롤러
+│   │   ├── service/           # 비즈니스 로직
+│   │   ├── entity/            # JPA 엔티티
+│   │   └── repository/        # 데이터 접근
+│   ├── src/main/resources/
+│   │   ├── application.properties          # 기본 설정
+│   │   └── application-local.properties    # 로컬 개발 설정
 │   └── Dockerfile
-├── chat-collector/            # Node.js 채팅 수집기
-│   ├── index.js             # 메인 수집 로직
+├── chat-collector/             # Node.js 채팅 수집기
+│   ├── index.js              # 메인 수집 로직
 │   └── package.json
-├── docker-compose.yml        # Docker 오케스트레이션
+├── docker-compose.yml         # 로컬 개발용
+├── docker-compose.prod.yml    # 운영 배포용
+├── Dockerfile                 # Railway 배포용
+├── railway.json              # Railway 설정
 └── README.md
 ```
 
 ## 🔧 환경 설정
 
-### 개발 환경 변수
+### 로컬 개발 환경
 
 #### Frontend (.env)
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-#### Backend (application.properties)
+#### Backend (application-local.properties)
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/tongnamuking
+# MySQL Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/tongnamuking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 spring.datasource.username=root
 spring.datasource.password=1234
+
+# CORS 설정
 cors.allowed.origins=http://localhost:5173,http://localhost:3000
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
 ```
 
-#### Chat Collector
-```bash
-BACKEND_URL=http://localhost:8080
-```
+### 배포 환경
 
-### 배포 환경 변수
-
-#### Frontend (.env.production)
-```env
-VITE_API_BASE_URL=https://your-domain.com
-```
-
-#### Docker Compose
-```yaml
-environment:
-  DATABASE_URL: jdbc:mysql://mysql:3306/tongnamuking
-  CORS_ALLOWED_ORIGINS: https://your-domain.com
-  BACKEND_URL: http://backend:8080
-```
+#### Railway 환경변수
+- `DATABASE_URL` - MySQL 연결 URL
+- `DATABASE_USERNAME` - 데이터베이스 사용자명
+- `DATABASE_PASSWORD` - 데이터베이스 비밀번호
+- `CORS_ALLOWED_ORIGINS` - 허용된 CORS 오리진
 
 ## 📊 주요 API
 
@@ -192,8 +194,8 @@ environment:
 
 ### 다른 채널 모드
 1. 상단 토글로 "다른 채널 검색하기" 선택
-2. 채널명 검색
-3. 수집 시작 (최대 3개 채널)
+2. 채널명으로 검색
+3. 원하는 채널 선택 후 수집 시작 (최대 3개 채널)
 4. 실시간 통계 확인
 
 ## 🐛 트러블슈팅
@@ -219,7 +221,7 @@ docker-compose up --build
 
 **4. 데이터베이스 연결 실패**
 - MySQL 컨테이너 상태 확인
-- 데이터베이스 접속 정보 확인
+- 로컬 개발 시 `--spring.profiles.active=local` 옵션 사용
 
 ### 로그 확인
 ```bash
@@ -231,6 +233,22 @@ docker-compose logs backend
 docker-compose logs frontend
 docker-compose logs mysql
 ```
+
+## 🌐 배포
+
+### Railway 배포
+1. Railway 프로젝트 생성
+2. GitHub 저장소 연결
+3. MySQL 서비스 추가
+4. 환경변수 설정
+5. 자동 배포
+
+### Vercel 프론트엔드 배포
+1. Vercel 프로젝트 생성
+2. GitHub 저장소 연결
+3. Build Command: `npm run build`
+4. Output Directory: `dist`
+5. 환경변수 설정 (`VITE_API_BASE_URL`)
 
 ## 🤝 기여하기
 
@@ -246,11 +264,12 @@ docker-compose logs mysql
 
 ## 📞 문의
 
-- 개발자: [정현민]
-- 이메일: [jhm991231@gmail.com]
+- 개발자: 정현민
+- 이메일: jhm991231@gmail.com
 - 프로젝트 링크: [https://github.com/jhm991231/TongNaMuKing](https://github.com/jhm991231/TongNaMuKing)
 
 ---
 
 **⚠️ 주의사항**
 - 대량의 채팅 수집 시 서버 리소스를 고려해주세요
+- 치지직 서비스 이용약관을 준수해주세요
