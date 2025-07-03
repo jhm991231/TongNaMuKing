@@ -11,6 +11,16 @@
 }
 
 /* 모바일에서 저챗견 패널이 열렸을 때 */
+@media (max-width: 1000px) {
+  .dogcake-app.panel-open {
+    padding-top: 900px;
+  }
+
+  .dogcake-app.panel-expanded {
+    padding-top: 1200px;
+  }
+}
+
 @media (max-width: 768px) {
   .dogcake-app.panel-open {
     padding-top: 900px;
@@ -23,11 +33,11 @@
 
 @media (max-width: 600px) {
   .dogcake-app.panel-open {
-    padding-top: 950px;
+    padding-top: 700px;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 1200px;
+    padding-top: 950px;
   }
 }
 
@@ -57,6 +67,122 @@
   margin-bottom: 2rem;
   flex-wrap: wrap;
   width: 100%;
+}
+
+/* 헤더 반응형 디자인 */
+@media (max-width: 768px) {
+  .dogcake-app h1 {
+    font-size: 1.8rem;
+    margin: 0.5rem 0 1rem 0;
+    gap: 0.3rem;
+  }
+
+  .dogcake-logo {
+    width: 1.5em;
+    height: 1.5em;
+  }
+
+  .dogcake-controls {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+  }
+
+  .dogcake-time-select {
+    font-size: 0.9rem !important;
+    padding: 0.4rem !important;
+  }
+
+  .dogcake-chatdog-settings-button {
+    font-size: 12px !important;
+    padding: 8px 14px !important;
+  }
+
+  .dogcake-status-display {
+    min-height: 40px !important;
+  }
+
+  .dogcake-loading,
+  .dogcake-collecting {
+    font-size: 0.9rem !important;
+  }
+
+  .dogcake-error-text {
+    font-size: 0.9rem !important;
+  }
+
+  .dogcake-retry-button {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.8rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-app h1 {
+    font-size: 1.6rem;
+    flex-direction: row;
+    gap: 0.5rem;
+    margin: 0.3rem 0 0.8rem 0;
+  }
+
+  .dogcake-logo {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  .dogcake-controls {
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .dogcake-time-select {
+    font-size: 0.8rem !important;
+    padding: 0.25rem !important;
+    min-width: 80px;
+  }
+
+  .dogcake-chatdog-settings-button {
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+  }
+
+  .dogcake-status-display {
+    min-height: 30px !important;
+    font-size: 0.8rem;
+  }
+
+  .dogcake-loading,
+  .dogcake-collecting {
+    font-size: 0.8rem !important;
+  }
+
+  .dogcake-error-text {
+    font-size: 0.8rem !important;
+  }
+
+  .dogcake-retry-button {
+    font-size: 0.7rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-app h1 {
+    font-size: 1.4rem;
+    gap: 0.3rem;
+  }
+
+  .dogcake-logo {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  .dogcake-controls {
+    gap: 0.6rem;
+  }
 }
 
 /* 독케익 저챗견 비율 설정 버튼 */
