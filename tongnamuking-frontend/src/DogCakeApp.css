@@ -626,7 +626,7 @@
 }
 
 .dogcake-character-left {
-  position: fixed;
+  position: absolute;
   top: 40%;
   left: 8%;
   transform: translateY(-50%);
