@@ -189,6 +189,49 @@
   .dogcake-controls {
     gap: 0.4rem;
   }
+
+  .dogcake-controls {
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .dogcake-time-select {
+    font-size: 0.5rem !important;
+    padding: 0.2rem !important;
+    min-width: 60px;
+  }
+
+  .dogcake-chatdog-settings-button {
+    font-size: 9px !important;
+    padding: 4px 8px !important;
+  }
+
+  .kong-icon {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .dogcake-status-display {
+    min-height: 30px !important;
+    font-size: 0.6rem;
+  }
+
+  .dogcake-loading,
+  .dogcake-collecting {
+    font-size: 0.6rem !important;
+  }
+
+  .dogcake-error-text {
+    font-size: 0.6rem !important;
+  }
+
+  .dogcake-retry-button {
+    font-size: 0.6rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
 }
 
 /* 독케익 저챗견 비율 설정 버튼 */
