@@ -10,6 +10,27 @@
   padding-top: 500px;
 }
 
+/* 모바일에서 저챗견 패널이 열렸을 때 */
+@media (max-width: 768px) {
+  .dogcake-app.panel-open {
+    padding-top: 900px;
+  }
+
+  .dogcake-app.panel-expanded {
+    padding-top: 1150px;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-app.panel-open {
+    padding-top: 950px;
+  }
+
+  .dogcake-app.panel-expanded {
+    padding-top: 1200px;
+  }
+}
+
 .dogcake-app h1 {
   color: #333;
   margin: 1rem 0 2rem 0;

@@ -250,7 +250,7 @@ function DogCakeApp() {
         className="dogcake-character-right"
       />
 
-      <div className="dogcake-app">
+      <div className={`dogcake-app ${showChatDogSettings ? 'panel-open' : ''} ${showChatDogSettings && chatDogRatio !== null ? 'panel-expanded' : ''}`}>
         <h1 style={{ gap: "18px" }}>
           <img
             src={dogcakeImage1}
