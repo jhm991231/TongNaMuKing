@@ -59,6 +59,22 @@ function AppRouter() {
             <Route path="/multi" element={<App />} />
           </Routes>
         </div>
+        
+        <footer style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          padding: "10px 20px",
+          background: "#f8f9fa",
+          borderTop: "1px solid #dee2e6",
+          color: "#6c757d",
+          fontSize: "12px",
+          zIndex: 1000
+        }}>
+          <p style={{ margin: 0 }}>버그제보 및 피드백 적극 환영 📧 jhm991231@gmail.com</p>
+        </footer>
       </div>
     </Router>
   );
