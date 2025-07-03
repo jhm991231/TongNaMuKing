@@ -33,11 +33,11 @@
 
 @media (max-width: 600px) {
   .dogcake-app.panel-open {
-    padding-top: 700px;
+    padding-top: 900px;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 950px;
+    padding-top: 1200px;
   }
 }
 
@@ -119,7 +119,7 @@
 
 @media (max-width: 600px) {
   .dogcake-app h1 {
-    font-size: 1.6rem;
+    font-size: 1.1rem;
     flex-direction: row;
     gap: 0.5rem;
     margin: 0.3rem 0 0.8rem 0;
@@ -139,49 +139,55 @@
   }
 
   .dogcake-time-select {
-    font-size: 0.8rem !important;
-    padding: 0.25rem !important;
-    min-width: 80px;
+    font-size: 0.5rem !important;
+    padding: 0.2rem !important;
+    min-width: 60px;
   }
 
   .dogcake-chatdog-settings-button {
-    font-size: 11px !important;
-    padding: 6px 10px !important;
+    font-size: 9px !important;
+    padding: 4px 8px !important;
+  }
+
+  .kong-icon {
+    width: 14px !important;
+    height: 14px !important;
   }
 
   .dogcake-status-display {
     min-height: 30px !important;
-    font-size: 0.8rem;
+    font-size: 0.6rem;
   }
 
   .dogcake-loading,
   .dogcake-collecting {
-    font-size: 0.8rem !important;
+    font-size: 0.6rem !important;
   }
 
   .dogcake-error-text {
-    font-size: 0.8rem !important;
+    font-size: 0.6rem !important;
   }
 
   .dogcake-retry-button {
-    font-size: 0.7rem !important;
+    font-size: 0.6rem !important;
     padding: 0.3rem 0.6rem !important;
   }
 }
 
 @media (max-width: 480px) {
   .dogcake-app h1 {
-    font-size: 1.4rem;
+    font-size: 1rem;
+    flex-direction: row;
     gap: 0.3rem;
   }
 
   .dogcake-logo {
-    width: 1.2em;
-    height: 1.2em;
+    width: 1em;
+    height: 1em;
   }
 
   .dogcake-controls {
-    gap: 0.6rem;
+    gap: 0.4rem;
   }
 }
 
