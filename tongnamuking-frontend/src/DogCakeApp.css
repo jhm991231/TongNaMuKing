@@ -628,7 +628,7 @@
 .dogcake-character-left {
   position: absolute;
   top: 40%;
-  left: 8%;
+  left: 3%;
   transform: translateY(-50%);
   width: 500px;
   height: 500px;
@@ -641,7 +641,7 @@
 .dogcake-character-right {
   position: absolute;
   top: 40%;
-  right: 5.5%;
+  right: 3%;
   transform: translateY(-50%);
   width: 500px;
   height: 500px;
@@ -651,8 +651,68 @@
   opacity: 0.7;
 }
 
-/* 모바일에서는 캐릭터 숨김 */
-@media (max-width: 480px) {
+/* 화면이 작아질 때 캐릭터를 바깥쪽으로 이동시켜 컨텐츠와 안겹치게 */
+@media (max-width: 1600px) {
+  .dogcake-character-left {
+    width: 400px;
+    height: 400px;
+    left: -5%;
+  }
+
+  .dogcake-character-right {
+    width: 400px;
+    height: 400px;
+    right: -5%;
+  }
+}
+
+@media (max-width: 1200px) {
+  .dogcake-character-left {
+    width: 300px;
+    height: 300px;
+    left: -7%;
+  }
+
+  .dogcake-character-right {
+    width: 300px;
+    height: 300px;
+    right: -7%;
+  }
+}
+
+@media (max-width: 1000px) {
+  .dogcake-character-left {
+    width: 250px;
+    height: 250px;
+    left: -18%;
+  }
+
+  .dogcake-character-right {
+    width: 250px;
+    height: 250px;
+    right: -18%;
+  }
+}
+
+/* 태블릿에서는 더 바깥으로 */
+@media (max-width: 768px) {
+  .dogcake-character-left {
+    width: 200px;
+    height: 200px;
+    left: -20%;
+    opacity: 0.5;
+  }
+
+  .dogcake-character-right {
+    width: 200px;
+    height: 200px;
+    right: -20%;
+    opacity: 0.5;
+  }
+}
+
+/* 작은 화면에서는 아예 숨김 */
+@media (max-width: 600px) {
   .dogcake-character-left,
   .dogcake-character-right {
     display: none;
