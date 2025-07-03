@@ -24,14 +24,8 @@ public class MultiChannelCollectionService {
     private final Map<String, Long> sessionLastActivity = new ConcurrentHashMap<>();
     
     private final int MAX_COLLECTORS_PER_USER = 3;
-    private static final String DOGCAKE_CHANNEL_ID = "b68af124ae2f1743a1dcbf5e2ab41e0b";
     
     public boolean startCollection(String sessionId, String channelId) {
-        // 독케익 채널은 멀티채널 시스템에서 수집하지 않음
-        if (DOGCAKE_CHANNEL_ID.equals(channelId)) {
-            log.warn("독케익 채널은 전용 시스템에서 수집됩니다: {}", channelId);
-            return false;
-        }
         
         // 사용자별 수집기 맵 가져오기 또는 생성
         Map<String, Process> userChannels = userCollections.computeIfAbsent(sessionId, k -> new ConcurrentHashMap<>());

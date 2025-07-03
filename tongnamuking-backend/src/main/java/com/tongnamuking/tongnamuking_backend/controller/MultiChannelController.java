@@ -16,14 +16,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/multi-channel-collection")
 @RequiredArgsConstructor
-@Tag(name = "멀티채널 수집", description = "여러 채널의 채팅 수집 관리 API (독케익 제외)")
+@Tag(name = "멀티채널 수집", description = "여러 채널의 채팅 수집 관리 API")
 @lombok.extern.slf4j.Slf4j
 public class MultiChannelController {
     
     private final MultiChannelCollectionService multiChannelCollectionService;
     
     @PostMapping("/start/{channelId}")
-    @Operation(summary = "채널 채팅 수집 시작", description = "지정된 채널의 실시간 채팅 수집을 시작합니다. (독케익 채널 제외)")
+    @Operation(summary = "채널 채팅 수집 시작", description = "지정된 채널의 실시간 채팅 수집을 시작합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청 성공 (수집 시작 성공/실패 여부는 response body 확인)"),
         @ApiResponse(responseCode = "500", description = "서버 오류")

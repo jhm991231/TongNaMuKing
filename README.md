@@ -63,7 +63,9 @@ CREATE DATABASE tongnamuking;
 #### 2. 백엔드 실행
 ```bash
 cd tongnamuking-backend
-./gradlew bootRun
+
+# 로컬 개발 환경으로 실행 (권장)
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 #### 3. 프론트엔드 실행
