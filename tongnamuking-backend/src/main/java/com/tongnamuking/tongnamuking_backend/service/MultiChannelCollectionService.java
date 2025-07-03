@@ -213,7 +213,7 @@ public class MultiChannelCollectionService {
     @Scheduled(fixedRate = 30000)
     public void cleanupInactiveSessions() {
         long currentTime = System.currentTimeMillis();
-        long inactiveThreshold = 1 * 60 * 1000; // 1분 (테스트용)
+        long inactiveThreshold = 2 * 60 * 1000; // 2분
         
         sessionLastActivity.entrySet().removeIf(entry -> {
             String sessionId = entry.getKey();

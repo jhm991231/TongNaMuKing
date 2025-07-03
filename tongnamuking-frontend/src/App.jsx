@@ -298,7 +298,7 @@ function App() {
     sendPing();
     
     // 30초마다 핑 전송
-    const interval = setInterval(sendPing, 100000);
+    const interval = setInterval(sendPing, 30000);
     setPingInterval(interval);
     console.log("Ping started - every 30 seconds");
   };
