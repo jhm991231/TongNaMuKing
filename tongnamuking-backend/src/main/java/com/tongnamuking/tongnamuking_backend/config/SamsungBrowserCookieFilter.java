@@ -23,11 +23,28 @@ public class SamsungBrowserCookieFilter implements Filter {
                 @Override
                 public void addHeader(String name, String value) {
                     if ("Set-Cookie".equals(name) && value.contains("JSESSIONID")) {
-                        // SameSite=None을 SameSite=Lax로 변경
-                        String modifiedValue = value.replace("SameSite=None", "SameSite=Lax");
+                        // 삼성인터넷용: HttpOnly=false, Secure=false, SameSite 제거
+                        String modifiedValue = value.replace("HttpOnly;", "")
+                                                   .replace("Secure;", "")
+                                                   .replace("SameSite=None;", "")
+                                                   .replace(";;", ";");
                         super.addHeader(name, modifiedValue);
                     } else {
                         super.addHeader(name, value);
+                    }
+                }
+                
+                @Override
+                public void setHeader(String name, String value) {
+                    if ("Set-Cookie".equals(name) && value.contains("JSESSIONID")) {
+                        // 삼성인터넷용: HttpOnly=false, Secure=false, SameSite 제거
+                        String modifiedValue = value.replace("HttpOnly;", "")
+                                                   .replace("Secure;", "")
+                                                   .replace("SameSite=None;", "")
+                                                   .replace(";;", ";");
+                        super.setHeader(name, modifiedValue);
+                    } else {
+                        super.setHeader(name, value);
                     }
                 }
             };
