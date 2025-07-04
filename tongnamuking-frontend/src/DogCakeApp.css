@@ -22,22 +22,28 @@
 }
 
 @media (max-width: 768px) {
+  .dogcake-app {
+    padding-top: 180px !important;
+  }
   .dogcake-app.panel-open {
-    padding-top: 900px;
+    padding-top: 320px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 1150px;
+    padding-top: 570px !important;
   }
 }
 
 @media (max-width: 600px) {
+  .dogcake-app {
+    padding-top: 300px;
+  }
   .dogcake-app.panel-open {
-    padding-top: 900px;
+    padding-top: 300px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 1200px;
+    padding-top: 550px !important;
   }
 }
 
@@ -277,6 +283,98 @@
   max-width: 600px;
 }
 
+/* 저챗견 패널 모바일 반응형 */
+@media (max-width: 768px) {
+  .dogcake-chatdog-settings-panel {
+    padding: 16px !important;
+    margin: 12px 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .dogcake-chatdog-settings-panel h3 {
+    font-size: 1.2rem !important;
+    gap: 6px !important;
+  }
+
+  .dogcake-punch-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .dogcake-chatdog-settings-panel p {
+    font-size: 0.9rem !important;
+    margin: 0 0 14px 0 !important;
+  }
+
+  .dogcake-calculate-button {
+    font-size: 11.5px !important;
+    padding: 10px 30px !important;
+    margin-top: 10px !important;
+    margin-bottom: 0px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-chatdog-settings-panel {
+    padding: 12px !important;
+    margin: 8px 0 !important;
+  }
+
+  .dogcake-chatdog-settings-panel h3 {
+    font-size: 1rem !important;
+    gap: 5px !important;
+  }
+
+  .dogcake-chatdog-settings-panel h4 {
+    font-size: 0.9rem !important;
+    gap: 5px !important;
+  }
+
+  .dogcake-punch-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .dogcake-chatdog-settings-panel p {
+    font-size: 0.7rem !important;
+  }
+
+  .dogcake-calculate-button {
+    font-size: 11px !important;
+    padding: 11px 20px !important;
+    margin-top: 10px !important;
+    margin-bottom: 0px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-chatdog-settings-panel {
+    padding: 10px !important;
+  }
+
+  .dogcake-chatdog-settings-panel h3 {
+    font-size: 0.8rem !important;
+    gap: 4px !important;
+  }
+
+  .dogcake-punch-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .dogcake-chatdog-settings-panel p {
+    font-size: 0.6rem !important;
+    margin: 0 0 8px 0 !important;
+  }
+
+  .dogcake-calculate-button {
+    font-size: 12px !important;
+    padding: 10px 16px !important;
+    margin-top: 10px !important;
+    margin-bottom: 0px !important;
+  }
+}
+
 .dogcake-chatdog-settings-panel h3 {
   margin: 0 0 8px 0;
   font-size: 1.3rem;
@@ -352,6 +450,63 @@
   color: #495057;
 }
 
+/* 모드 토글 모바일 반응형 */
+@media (max-width: 768px) {
+  .dogcake-mode-toggle {
+    margin: 12px 0 18px 0 !important;
+  }
+
+  .dogcake-toggle-label {
+    padding: 10px 14px !important;
+    gap: 10px !important;
+  }
+
+  .dogcake-toggle-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .dogcake-toggle-text {
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-mode-toggle {
+    margin: 10px 0 14px 0 !important;
+  }
+
+  .dogcake-toggle-label {
+    padding: 8px 12px !important;
+    gap: 8px;
+  }
+
+  .dogcake-toggle-checkbox {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .dogcake-toggle-text {
+    font-size: 0.65rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-toggle-label {
+    padding: 6px 10px !important;
+    gap: 6px !important;
+  }
+
+  .dogcake-toggle-checkbox {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .dogcake-toggle-text {
+    font-size: 0.7rem !important;
+  }
+}
+
 /* 자동 모드 설명 */
 .dogcake-auto-mode-description {
   background: #f8f9fa;
@@ -372,6 +527,51 @@
   font-weight: 600;
   color: #495057;
   margin-bottom: 8px;
+}
+
+/* 자동 모드 설명 모바일 반응형 */
+@media (max-width: 768px) {
+  .dogcake-auto-mode-description {
+    padding: 12px !important;
+    margin: 12px 0 !important;
+  }
+
+  .dogcake-auto-mode-description p {
+    font-size: 0.8rem !important;
+    margin: 4px 0 !important;
+  }
+
+  .dogcake-auto-mode-description p:first-child {
+    margin-bottom: 6px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-auto-mode-description {
+    padding: 10px !important;
+    margin: 10px 0 !important;
+  }
+
+  .dogcake-auto-mode-description p {
+    font-size: 0.6rem !important;
+    margin: 3px 0 !important;
+  }
+
+  .dogcake-auto-mode-description p:first-child {
+    margin-bottom: 4px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-auto-mode-description {
+    padding: 8px !important;
+    margin: 8px 0 !important;
+  }
+
+  .dogcake-auto-mode-description p {
+    font-size: 0.7rem !important;
+    margin: 2px 0 !important;
+  }
 }
 
 /* 수동 게임 구간 설정 */
@@ -494,6 +694,177 @@
   background: #5a5a5a !important;
 }
 
+/* 수동 게임 구간 설정 모바일 반응형 */
+@media (max-width: 768px) {
+  .dogcake-manual-time-settings h4 {
+    font-size: 1rem !important;
+    margin: 0 0 6px 0 !important;
+  }
+
+  .dogcake-manual-description {
+    font-size: 0.8rem !important;
+    margin: 0 0 16px 0 !important;
+  }
+
+  .dogcake-game-segments {
+    gap: 12px !important;
+    margin: 16px 0 !important;
+  }
+
+  .dogcake-game-segment {
+    padding: 12px !important;
+  }
+
+  .dogcake-segment-header {
+    margin-bottom: 10px !important;
+  }
+
+  .dogcake-segment-title {
+    font-size: 0.85rem !important;
+  }
+
+  .dogcake-remove-segment-btn {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 10px !important;
+  }
+
+  .dogcake-segment-inputs {
+    gap: 12px !important;
+  }
+
+  .dogcake-time-input label {
+    font-size: 0.85rem !important;
+    min-width: 35px !important;
+  }
+
+  .dogcake-time-input input {
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+    width: 70px !important;
+  }
+
+  .dogcake-time-input span {
+    font-size: 0.8rem !important;
+  }
+
+  .dogcake-add-segment-btn {
+    font-size: 13px !important;
+    padding: 8px 14px !important;
+    margin: 10px 0 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-manual-time-settings h4 {
+    font-size: 0.85rem !important;
+    margin: 0 0 4px 0 !important;
+  }
+
+  .dogcake-manual-description {
+    font-size: 0.75rem !important;
+    margin: 0 0 12px 0 !important;
+  }
+
+  .dogcake-game-segments {
+    gap: 10px !important;
+    margin: 12px 0 !important;
+  }
+
+  .dogcake-game-segment {
+    padding: 10px !important;
+  }
+
+  .dogcake-segment-header {
+    margin-bottom: 8px !important;
+  }
+
+  .dogcake-segment-title {
+    font-size: 0.8rem !important;
+  }
+
+  .dogcake-remove-segment-btn {
+    width: 10px !important;
+    height: 15px !important;
+    font-size: 8px !important;
+  }
+
+  .dogcake-segment-inputs {
+    gap: 10px !important;
+  }
+
+  .dogcake-time-input label {
+    font-size: 0.8rem !important;
+    min-width: 30px !important;
+  }
+
+  .dogcake-time-input input {
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+    width: 60px !important;
+  }
+
+  .dogcake-time-input span {
+    font-size: 0.75rem !important;
+  }
+
+  .dogcake-add-segment-btn {
+    font-size: 10px !important;
+    padding: 4px 12px !important;
+    margin: 8px 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-manual-time-settings h4 {
+    font-size: 0.85rem;
+  }
+
+  .dogcake-manual-description {
+    font-size: 0.7rem;
+    margin: 0 0 10px 0;
+  }
+
+  .dogcake-game-segments {
+    gap: 8px;
+    margin: 10px 0;
+  }
+
+  .dogcake-game-segment {
+    padding: 8px;
+  }
+
+  .dogcake-segment-inputs {
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dogcake-time-input {
+    justify-content: space-between;
+  }
+
+  .dogcake-time-input label {
+    font-size: 0.75rem;
+    min-width: 25px;
+  }
+
+  .dogcake-time-input input {
+    font-size: 11px;
+    padding: 4px 6px;
+    width: 50px;
+  }
+
+  .dogcake-time-input span {
+    font-size: 0.7rem;
+  }
+
+  .dogcake-add-segment-btn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}
+
 .dogcake-time-input-group {
   display: flex;
   align-items: center;
@@ -608,6 +979,86 @@
   font-size: 0.85rem;
   color: #d1d5db;
   backdrop-filter: blur(10px);
+}
+
+/* 저챗견 결과 표시 모바일 반응형 */
+@media (max-width: 768px) {
+  .dogcake-chatdog-result {
+    padding: 16px !important;
+    margin-top: 12px !important;
+  }
+
+  .dogcake-ratio-percentage {
+    font-size: 1.2rem !important;
+    margin-bottom: 12px !important;
+  }
+
+  .dogcake-ratio-percentage strong {
+    font-size: 1.4rem !important;
+  }
+
+  .dogcake-ratio-details {
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+
+  .dogcake-ratio-details p {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-chatdog-result {
+    padding: 12px !important;
+    margin-top: 10px !important;
+  }
+
+  .dogcake-ratio-percentage {
+    font-size: 0.9rem !important;
+    margin-bottom: 10px !important;
+  }
+
+  .dogcake-ratio-percentage strong {
+    font-size: 0.9rem !important;
+  }
+
+  .dogcake-ratio-details {
+    gap: 5px !important;
+    margin-top: 8px !important;
+  }
+
+  .dogcake-ratio-details p {
+    padding: 6px 8px !important;
+    font-size: 0.6rem !important;
+    margin-bottom: 2px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-chatdog-result {
+    padding: 10px !important;
+    margin-top: 8px !important;
+  }
+
+  .dogcake-ratio-percentage {
+    font-size: 0.9rem !important;
+    margin-bottom: 8px !important;
+  }
+
+  .dogcake-ratio-percentage strong {
+    font-size: 0.9rem !important;
+  }
+
+  .dogcake-ratio-details {
+    gap: 4px !important;
+    margin-top: 6px !important;
+  }
+
+  .dogcake-ratio-details p {
+    padding: 5px 6px !important;
+    font-size: 0.6rem !important;
+  }
 }
 
 .dogcake-time-select {
@@ -924,20 +1375,20 @@
   .dogcake-rank {
     font-size: 1rem;
   }
-  
+
   .dogcake-display-name {
     font-size: 1rem;
   }
-  
+
   .dogcake-message-count {
     font-size: 1.1rem;
   }
-  
+
   .dogcake-stat-item {
     min-height: 40px;
     padding: 0.4rem 0.8rem;
   }
-  
+
   .dogcake-user-info {
     margin-left: 0.8rem;
   }
@@ -948,24 +1399,24 @@
     font-size: 0.9rem;
     min-width: 40px;
   }
-  
+
   .dogcake-display-name {
     font-size: 0.9rem;
   }
-  
+
   .dogcake-message-count {
     font-size: 1rem;
   }
-  
+
   .dogcake-stat-item {
     min-height: 35px;
     padding: 0.3rem 0.6rem;
   }
-  
+
   .dogcake-user-info {
     margin-left: 0.6rem;
   }
-  
+
   .dogcake-rank.crown::before {
     font-size: 0.8rem;
     top: -12px;
@@ -977,24 +1428,24 @@
     font-size: 0.8rem;
     min-width: 35px;
   }
-  
+
   .dogcake-display-name {
     font-size: 0.8rem;
   }
-  
+
   .dogcake-message-count {
     font-size: 0.9rem;
   }
-  
+
   .dogcake-stat-item {
     min-height: 30px;
     padding: 0.25rem 0.5rem;
   }
-  
+
   .dogcake-user-info {
     margin-left: 0.5rem;
   }
-  
+
   .dogcake-rank.crown::before {
     font-size: 0.7rem;
     top: -10px;
