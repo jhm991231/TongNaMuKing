@@ -27,13 +27,19 @@ html {
 
 @media (max-width: 768px) {
   .app {
-    padding-top: 50px;
+    padding-top: 300px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding-top: 200px !important;
   }
 }
 
 @media (max-width: 480px) {
   .app {
-    padding-top: 45px;
+    padding-top: 200px !important;
   }
 }
 
@@ -137,19 +143,19 @@ html {
     align-items: stretch;
     gap: 8px;
   }
-  
+
   .time-input-group label {
     min-width: auto;
     text-align: center;
     margin-bottom: 5px;
   }
-  
+
   .time-input-group input {
     width: 100%;
     max-width: 120px;
     margin: 0 auto;
   }
-  
+
   .time-input-group span {
     text-align: center;
   }
@@ -913,12 +919,12 @@ button:disabled {
     padding: 1rem 1rem 40px 1rem;
     max-width: 100%;
   }
-  
+
   .app h1 {
     font-size: 1.8rem;
     margin: 0.5rem 0 1rem 0;
   }
-  
+
   .controls {
     flex-direction: row;
     gap: 0.4rem;
@@ -926,12 +932,12 @@ button:disabled {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .search-container {
     flex: 1;
     min-width: 140px;
   }
-  
+
   .channel-input {
     width: 100%;
     min-width: auto;
@@ -942,7 +948,7 @@ button:disabled {
     height: 32px;
     box-sizing: border-box;
   }
-  
+
   .time-select {
     flex: 0 0 auto;
     width: auto;
@@ -954,7 +960,7 @@ button:disabled {
     height: 32px;
     box-sizing: border-box;
   }
-  
+
   button {
     flex: 0 0 auto;
     width: auto;
@@ -964,7 +970,7 @@ button:disabled {
     box-sizing: border-box;
     white-space: nowrap;
   }
-  
+
   .chatdog-settings-button {
     flex: 0 0 auto;
     width: auto;
@@ -974,68 +980,207 @@ button:disabled {
     box-sizing: border-box !important;
     white-space: nowrap;
   }
-  
+
   .main-section {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .active-collectors-inline {
     max-width: 100%;
     min-width: auto;
   }
-  
+
   .active-collectors-fixed {
     display: none;
   }
-  
+
   .search-result-item {
-    padding: 1rem;
-    min-height: 70px;
+    padding: 0.5rem !important;
+    min-height: 45px !important;
   }
-  
+
   .channel-image-container {
-    width: 50px;
-    height: 50px;
+    width: 45px !important;
+    height: 45px !important;
   }
-  
+
   .channel-name {
-    font-size: 1rem;
+    font-size: 0.9rem !important;
   }
-  
+
   .follower-count {
-    font-size: 0.9rem;
+    font-size: 0.8rem !important;
   }
-  
+
+  .live-badge {
+    font-size: 0.7rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
   .collect-button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.8rem !important;
   }
-  
+
+  .search-results {
+    max-height: 180px !important;
+  }
+
   .stats-list {
     max-width: 100%;
   }
-  
+
   .stat-item {
     padding: 0.75rem 1rem;
     min-height: 60px;
   }
-  
+
   .display-name {
     font-size: 1.1rem;
   }
-  
+
   .message-count {
     font-size: 1.2rem;
   }
-  
+
   .rank {
     font-size: 1.1rem;
     min-width: 40px;
   }
-  
+
   .user-info {
     margin-left: 0.5rem;
+  }
+
+  .rank {
+    font-size: 1rem !important;
+  }
+
+  .display-name {
+    font-size: 1rem !important;
+  }
+
+  .message-count {
+    font-size: 1.1rem !important;
+  }
+
+  .stat-item {
+    min-height: 40px !important;
+    padding: 0.4rem 0.8rem !important;
+  }
+
+  .user-info {
+    margin-left: 0.8rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding: 0.5rem 0.5rem 30px 0.5rem;
+  }
+
+  .app h1 {
+    font-size: 1.2rem;
+  }
+
+  .controls {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .search-container,
+  .time-select,
+  button {
+    min-width: auto !important;
+    flex: none !important;
+  }
+
+  .search-container {
+    max-width: 110px;
+  }
+
+  .channel-input {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .time-select {
+    padding: 0.2rem;
+    font-size: 0.7rem;
+    max-width: 80px;
+  }
+
+  button {
+    padding: 0.5rem;
+    font-size: 0.7em;
+  }
+
+  .search-result-item {
+    padding: 0.1rem !important;
+    min-height: 40px !important;
+  }
+
+  .channel-image-container {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .channel-name {
+    font-size: 0.6rem !important;
+  }
+
+  .follower-count {
+    font-size: 0.4rem !important;
+  }
+
+  .live-badge {
+    font-size: 0.4rem !important;
+    padding: 0.15rem 0.3rem !important;
+  }
+
+  .search-results {
+    max-height: 150px !important;
+  }
+
+  .stat-item {
+    padding: 0.5rem 0.75rem;
+    min-height: 50px;
+  }
+
+  .display-name {
+    font-size: 1rem;
+  }
+
+  .message-count {
+    font-size: 1.1rem;
+  }
+
+  .rank {
+    font-size: 0.9rem !important;
+    min-width: 40px !important;
+  }
+
+  .display-name {
+    font-size: 0.9rem !important;
+  }
+
+  .message-count {
+    font-size: 1rem !important;
+  }
+
+  .stat-item {
+    min-height: 35px !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  .user-info {
+    margin-left: 0.6rem !important;
+  }
+
+  .rank.crown::before {
+    font-size: 0.8rem !important;
+    top: -12px !important;
   }
 }
 
@@ -1043,16 +1188,17 @@ button:disabled {
   .app {
     padding: 0.5rem 0.5rem 30px 0.5rem;
   }
-  
+
   .app h1 {
-    font-size: 1.5rem;
+    font-size: 1.2rem !important;
+    margin: 0.3rem 0 0.8rem 0 !important;
   }
-  
+
   .controls {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-container,
   .time-select,
   button {
@@ -1060,47 +1206,82 @@ button:disabled {
     min-width: auto !important;
     flex: none !important;
   }
-  
+
   .channel-input {
-    padding: 0.5rem;
-    font-size: 0.9rem;
+    padding: 0.4rem !important;
+    font-size: 0.8rem !important;
+    height: 36px !important;
   }
-  
+
   .time-select {
-    padding: 0.5rem;
-    font-size: 0.9rem;
+    padding: 0.4rem !important;
+    font-size: 0.8rem !important;
+    height: 36px !important;
   }
-  
+
   button {
-    padding: 0.5rem;
-    font-size: 0.9rem;
+    padding: 0.4rem !important;
+    font-size: 0.8rem !important;
+    height: 36px !important;
   }
-  
+
+  .chatdog-settings-button {
+    padding: 6px 8px !important;
+    font-size: 0.75rem !important;
+    height: 36px !important;
+  }
+
   .search-result-item {
-    padding: 0.75rem;
-    min-height: 60px;
+    padding: 0.5rem !important;
+    min-height: 45px !important;
   }
-  
+
   .channel-image-container {
-    width: 40px;
-    height: 40px;
+    width: 30px !important;
+    height: 30px !important;
   }
-  
+
+  .channel-name {
+    font-size: 0.75rem !important;
+  }
+
+  .follower-count {
+    font-size: 0.65rem !important;
+  }
+
+  .live-badge {
+    font-size: 0.55rem !important;
+    padding: 0.1rem 0.2rem !important;
+  }
+
+  .search-results {
+    max-height: 120px !important;
+  }
+
   .stat-item {
-    padding: 0.5rem 0.75rem;
-    min-height: 50px;
+    padding: 0.5rem 0.75rem !important;
+    min-height: 50px !important;
   }
-  
+
   .display-name {
-    font-size: 1rem;
+    font-size: 0.8rem !important;
   }
-  
+
   .message-count {
-    font-size: 1.1rem;
+    font-size: 0.9rem !important;
   }
-  
+
   .rank {
-    font-size: 1rem;
-    min-width: 35px;
+    font-size: 0.8rem !important;
+    min-width: 35px !important;
+  }
+
+  .user-info {
+    margin-left: 0.5rem !important;
+  }
+
+  .rank.crown::before {
+    font-size: 0.7rem !important;
+    top: -10px !important;
   }
 }
