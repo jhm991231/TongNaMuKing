@@ -1,6 +1,7 @@
 package com.tongnamuking.tongnamuking_backend.controller;
 
 import com.tongnamuking.tongnamuking_backend.service.MultiChannelCollectionService;
+import com.tongnamuking.tongnamuking_backend.service.ClientIdentifierService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
@@ -21,6 +22,7 @@ import java.util.Map;
 public class MultiChannelController {
     
     private final MultiChannelCollectionService multiChannelCollectionService;
+    private final ClientIdentifierService clientIdentifierService;
     
     @PostMapping("/start/{channelId}")
     @Operation(summary = "채널 채팅 수집 시작", description = "지정된 채널의 실시간 채팅 수집을 시작합니다.")
@@ -30,21 +32,21 @@ public class MultiChannelController {
     })
     public ResponseEntity<Map<String, Object>> startCollection(
         @Parameter(description = "수집할 채널 ID", required = true) @PathVariable String channelId,
-        HttpSession session) {
+        HttpServletRequest request) {
         
-        String sessionId = session.getId();
+        String clientId = clientIdentifierService.resolveClientId(request);
         log.info("=== 수집 시작 요청 ===");
-        log.info("세션 ID: {}", sessionId);
+        log.info("클라이언트 ID: {}", clientId);
         log.info("채널 ID: {}", channelId);
-        log.info("현재 수집 중인 채널들: {}", multiChannelCollectionService.getActiveChannels(sessionId));
-        boolean success = multiChannelCollectionService.startCollection(sessionId, channelId);
+        log.info("현재 수집 중인 채널들: {}", multiChannelCollectionService.getActiveChannels(clientId));
+        boolean success = multiChannelCollectionService.startCollection(clientId, channelId);
         
         String message;
         if (success) {
             message = "멀티채널 수집이 시작되었습니다";
-        } else if (multiChannelCollectionService.isCollecting(sessionId, channelId)) {
+        } else if (multiChannelCollectionService.isCollecting(clientId, channelId)) {
             message = "이미 해당 채널의 채팅을 수집 중입니다";
-        } else if (multiChannelCollectionService.getActiveCollectorCount(sessionId) >= multiChannelCollectionService.getMaxCollectors()) {
+        } else if (multiChannelCollectionService.getActiveCollectorCount(clientId) >= multiChannelCollectionService.getMaxCollectors()) {
             message = String.format("최대 수집기 수(%d)에 도달했습니다", multiChannelCollectionService.getMaxCollectors());
         } else {
             message = "멀티채널 수집 시작에 실패했습니다";
@@ -53,9 +55,9 @@ public class MultiChannelController {
         return ResponseEntity.ok(Map.of(
             "success", success,
             "message", message,
-            "status", multiChannelCollectionService.getStatus(sessionId),
-            "activeChannels", multiChannelCollectionService.getActiveChannels(sessionId),
-            "activeCount", multiChannelCollectionService.getActiveCollectorCount(sessionId),
+            "status", multiChannelCollectionService.getStatus(clientId),
+            "activeChannels", multiChannelCollectionService.getActiveChannels(clientId),
+            "activeCount", multiChannelCollectionService.getActiveCollectorCount(clientId),
             "maxCount", multiChannelCollectionService.getMaxCollectors()
         ));
     }
@@ -68,21 +70,21 @@ public class MultiChannelController {
     })
     public ResponseEntity<Map<String, Object>> stopCollection(
         @Parameter(description = "중지할 채널 ID", required = true) @PathVariable String channelId,
-        HttpSession session) {
+        HttpServletRequest request) {
         
-        String sessionId = session.getId();
+        String clientId = clientIdentifierService.resolveClientId(request);
         log.info("=== 수집 중지 요청 ===");
-        log.info("세션 ID: {}", sessionId);
+        log.info("클라이언트 ID: {}", clientId);
         log.info("채널 ID: {}", channelId);
-        log.info("현재 수집 중인 채널들: {}", multiChannelCollectionService.getActiveChannels(sessionId));
-        boolean success = multiChannelCollectionService.stopCollection(sessionId, channelId);
+        log.info("현재 수집 중인 채널들: {}", multiChannelCollectionService.getActiveChannels(clientId));
+        boolean success = multiChannelCollectionService.stopCollection(clientId, channelId);
         
         return ResponseEntity.ok(Map.of(
             "success", success,
             "message", success ? "멀티채널 수집이 중지되었습니다" : "해당 채널은 수집 중이 아닙니다",
-            "status", multiChannelCollectionService.getStatus(sessionId),
-            "activeChannels", multiChannelCollectionService.getActiveChannels(sessionId),
-            "activeCount", multiChannelCollectionService.getActiveCollectorCount(sessionId)
+            "status", multiChannelCollectionService.getStatus(clientId),
+            "activeChannels", multiChannelCollectionService.getActiveChannels(clientId),
+            "activeCount", multiChannelCollectionService.getActiveCollectorCount(clientId)
         ));
     }
     
@@ -92,14 +94,14 @@ public class MultiChannelController {
         @ApiResponse(responseCode = "200", description = "요청 성공 (단, 일부 수집 중지에 실패할 수 있음)"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<Map<String, Object>> stopAllCollections(HttpSession session) {
-        String sessionId = session.getId();
-        boolean success = multiChannelCollectionService.stopAllCollections(sessionId);
+    public ResponseEntity<Map<String, Object>> stopAllCollections(HttpServletRequest request) {
+        String clientId = clientIdentifierService.resolveClientId(request);
+        boolean success = multiChannelCollectionService.stopAllCollections(clientId);
         
         return ResponseEntity.ok(Map.of(
             "success", success,
             "message", success ? "모든 멀티채널 수집이 중지되었습니다" : "일부 수집 중지에 실패했습니다",
-            "status", multiChannelCollectionService.getStatus(sessionId)
+            "status", multiChannelCollectionService.getStatus(clientId)
         ));
     }
     
@@ -110,16 +112,16 @@ public class MultiChannelController {
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     public ResponseEntity<Map<String, Object>> getStatus(
-            HttpSession session) {
-        String sessionId = session.getId();
-        log.info("수집 상태 조회: 세션={}", sessionId);
+            HttpServletRequest request) {
+        String clientId = clientIdentifierService.resolveClientId(request);
+        log.info("수집 상태 조회: 클라이언트={}", clientId);
         
         return ResponseEntity.ok(Map.of(
-            "isAnyCollecting", multiChannelCollectionService.isAnyCollecting(sessionId),
-            "activeChannels", multiChannelCollectionService.getActiveChannels(sessionId),
-            "activeCount", multiChannelCollectionService.getActiveCollectorCount(sessionId),
+            "isAnyCollecting", multiChannelCollectionService.isAnyCollecting(clientId),
+            "activeChannels", multiChannelCollectionService.getActiveChannels(clientId),
+            "activeCount", multiChannelCollectionService.getActiveCollectorCount(clientId),
             "maxCount", multiChannelCollectionService.getMaxCollectors(),
-            "status", multiChannelCollectionService.getStatus(sessionId)
+            "status", multiChannelCollectionService.getStatus(clientId)
         ));
     }
     
@@ -131,11 +133,11 @@ public class MultiChannelController {
     })
     public ResponseEntity<Map<String, Object>> getChannelStatus(
         @Parameter(description = "조회할 채널 ID", required = true) @PathVariable String channelId,
-        HttpSession session) {
-        String sessionId = session.getId();
+        HttpServletRequest request) {
+        String clientId = clientIdentifierService.resolveClientId(request);
         return ResponseEntity.ok(Map.of(
             "channelId", channelId,
-            "isCollecting", multiChannelCollectionService.isCollecting(sessionId, channelId)
+            "isCollecting", multiChannelCollectionService.isCollecting(clientId, channelId)
         ));
     }
 }
