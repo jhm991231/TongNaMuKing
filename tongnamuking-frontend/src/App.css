@@ -1254,8 +1254,8 @@ button:disabled {
   }
 
   .stat-item {
-    padding: 0.5rem 0.75rem !important;
-    min-height: 50px !important;
+    padding: 0.3rem 0.6rem !important;
+    min-height: 30px !important;
   }
 
   .display-name {
