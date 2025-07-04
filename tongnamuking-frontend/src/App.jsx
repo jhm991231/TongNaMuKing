@@ -2,7 +2,33 @@ import { useState, useEffect } from "react";
 import "./App.css";
 
 // API 기본 URL 환경변수로 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+// 안정적인 클라이언트 식별자 생성
+function generateStableClientId() {
+  let clientId = localStorage.getItem("client_id");
+  if (!clientId) {
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 15);
+    clientId = `client_${timestamp}_${randomStr}`;
+    try {
+      localStorage.setItem("client_id", clientId);
+    } catch (e) {
+      console.warn("LocalStorage 저장 실패:", e);
+    }
+  }
+  return clientId;
+}
+
+// API 호출 시 공통 헤더 생성
+function getApiHeaders() {
+  const clientId = generateStableClientId();
+  return {
+    "Content-Type": "application/json",
+    "X-Client-ID": clientId,
+  };
+}
 
 function App() {
   const [channelName, setChannelName] = useState("");
@@ -18,16 +44,13 @@ function App() {
   const [maxCollectors, setMaxCollectors] = useState(3);
   const [channelIdToName, setChannelIdToName] = useState(new Map());
 
-  // 독케익 채널 ID (멀티채널 앱에서 제외)
-  const DOGCAKE_CHANNEL_ID = "b68af124ae2f1743a1dcbf5e2ab41e0b";
-  
   // 핑 관련 상태
   const [pingInterval, setPingInterval] = useState(null);
 
   useEffect(() => {
     checkCollectionStatus();
     loadActiveCollectors();
-    
+
     // 핑 시작
     startPing();
   }, []);
@@ -81,7 +104,7 @@ function App() {
           query
         )}`,
         {
-          credentials: "include"
+          headers: getApiHeaders(),
         }
       );
       const data = await response.json();
@@ -137,7 +160,7 @@ function App() {
         `${API_BASE_URL}/api/chat-collection/start/${channelId}`,
         {
           method: "POST",
-          credentials: "include"
+          headers: getApiHeaders(),
         }
       );
       const data = await response.json();
@@ -159,13 +182,10 @@ function App() {
 
   const stopChatCollection = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/chat-collection/stop`,
-        {
-          method: "POST",
-          credentials: "include"
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/chat-collection/stop`, {
+        method: "POST",
+        headers: getApiHeaders(),
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -186,7 +206,7 @@ function App() {
       const response = await fetch(
         `${API_BASE_URL}/api/chat-collection/status`,
         {
-          credentials: "include"
+          headers: getApiHeaders(),
         }
       );
       const data = await response.json();
@@ -202,7 +222,7 @@ function App() {
       const response = await fetch(
         `${API_BASE_URL}/api/multi-channel-collection/status`,
         {
-          credentials: "include", // 세션 쿠키 포함
+          headers: getApiHeaders(),
         }
       );
       const data = await response.json();
@@ -216,7 +236,7 @@ function App() {
             const channelResponse = await fetch(
               `${API_BASE_URL}/api/channels/${channelId}/info`,
               {
-                credentials: "include"
+                headers: getApiHeaders(),
               }
             );
             const channelData = await channelResponse.json();
@@ -243,7 +263,7 @@ function App() {
         `${API_BASE_URL}/api/multi-channel-collection/start/${selectedChannelId}`,
         {
           method: "POST",
-          credentials: "include", // 세션 쿠키 포함
+          headers: getApiHeaders(),
         }
       );
       const data = await response.json();
@@ -268,7 +288,7 @@ function App() {
         `${API_BASE_URL}/api/multi-channel-collection/stop/${selectedChannelId}`,
         {
           method: "POST",
-          credentials: "include", // 세션 쿠키 포함
+          headers: getApiHeaders(),
         }
       );
       const data = await response.json();
@@ -290,7 +310,7 @@ function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/chat/ping`, {
         method: "GET",
-        credentials: "include", // 중요: 세션 쿠키 포함
+        headers: getApiHeaders(),
       });
       const data = await response.json();
       console.log("Ping sent:", data.sessionId);
@@ -304,10 +324,10 @@ function App() {
     if (pingInterval) {
       clearInterval(pingInterval);
     }
-    
+
     // 즉시 한 번 핑 전송
     sendPing();
-    
+
     // 30초마다 핑 전송
     const interval = setInterval(sendPing, 30000);
     setPingInterval(interval);
@@ -337,7 +357,7 @@ function App() {
     if (!stats || stats.length === 0) {
       setLoading(true);
     }
-    
+
     try {
       const url =
         timeRange > 0
@@ -349,15 +369,15 @@ function App() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(url, {
-        credentials: "include", // 세션 쿠키 포함
-        signal: controller.signal
+        headers: getApiHeaders(),
+        signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       const data = await response.json();
       setStats(data);
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error.name === "AbortError") {
         console.error("API 요청 타임아웃:", error);
         setStats([]); // 빈 배열로 설정하여 로딩 해제
       } else {
@@ -425,16 +445,19 @@ function App() {
                         `${API_BASE_URL}/api/multi-channel-collection/stop/${channelId}`,
                         {
                           method: "POST",
-                          credentials: "include", // 세션 쿠키 포함
+                          headers: getApiHeaders(),
                         }
                       );
-                      
+
                       console.log(`📡 응답 상태: ${response.status}`);
-                      console.log(`🍪 응답 헤더:`, Object.fromEntries(response.headers.entries()));
-                      
+                      console.log(
+                        `🍪 응답 헤더:`,
+                        Object.fromEntries(response.headers.entries())
+                      );
+
                       const data = await response.json();
                       console.log(`📄 응답 데이터:`, data);
-                      
+
                       if (data.success) {
                         setActiveCollectors(new Set(data.activeChannels));
                         console.log(`✅ 수집 중지 성공`);

@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -51,25 +51,24 @@ public class ChatStatsController {
     }
     
     @GetMapping("/session/channel/{channelName}")
-    @Operation(summary = "세션별 채널 채팅 통계 조회", description = "지정된 세션의 채널별 채팅 통계를 조회합니다.")
+    @Operation(summary = "클라이언트별 채널 채팅 통계 조회", description = "지정된 클라이언트의 채널별 채팅 통계를 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "통계 조회 성공"),
         @ApiResponse(responseCode = "404", description = "채널을 찾을 수 없음"),
         @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<List<ChatStatsResponse>> getChatStatsByChannelAndSession(
+    public ResponseEntity<List<ChatStatsResponse>> getChatStatsByChannelAndClient(
             @Parameter(description = "채널명", required = true) @PathVariable String channelName,
             @Parameter(description = "조회할 시간 범위 (시간 단위, 0이면 전체)") @RequestParam(defaultValue = "0") double hours,
-            HttpSession session) {
+            HttpServletRequest request) {
         
-        String sessionId = session.getId();
-        log.info("채팅 통계 조회: 채널={}, 세션={}", channelName, sessionId);
+        log.info("채팅 통계 조회: 채널={}", channelName);
         
         List<ChatStatsResponse> stats;
         if (hours > 0) {
-            stats = memoryChatDataService.getChatStatsByChannelAndTimeRange(sessionId, channelName, hours);
+            stats = memoryChatDataService.getChatStatsByChannelAndTimeRange(request, channelName, hours);
         } else {
-            stats = memoryChatDataService.getChatStatsByChannel(sessionId, channelName);
+            stats = memoryChatDataService.getChatStatsByChannel(request, channelName);
         }
         
         return ResponseEntity.ok(stats);

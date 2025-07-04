@@ -2,9 +2,11 @@ package com.tongnamuking.tongnamuking_backend.service;
 
 import com.tongnamuking.tongnamuking_backend.dto.ChatStatsResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,16 +16,51 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MemoryChatDataService {
     
-    // 세션별 채팅 데이터 저장: sessionId -> channelName -> List<ChatData>
-    private final Map<String, Map<String, List<ChatData>>> sessionChatData = new ConcurrentHashMap<>();
+    @Autowired
+    private ClientIdentifierService clientIdentifierService;
     
-    // 세션별 마지막 활동 시간 추적
-    private final Map<String, LocalDateTime> sessionLastActivity = new ConcurrentHashMap<>();
+    /**
+     * HTTP 요청에서 클라이언트 ID를 추출하고 채팅 메시지를 추가합니다.
+     */
+    public void addChatMessage(HttpServletRequest request, String username, String channelName, String message) {
+        String clientId = clientIdentifierService.resolveClientId(request);
+        addChatMessage(clientId, username, channelName, message);
+    }
+    
+    /**
+     * HTTP 요청에서 클라이언트 ID를 추출하고 채널별 채팅 통계를 반환합니다.
+     */
+    public List<ChatStatsResponse> getChatStatsByChannel(HttpServletRequest request, String channelName) {
+        String clientId = clientIdentifierService.resolveClientId(request);
+        return getChatStatsByChannel(clientId, channelName);
+    }
+    
+    /**
+     * HTTP 요청에서 클라이언트 ID를 추출하고 시간 범위별 채팅 통계를 반환합니다.
+     */
+    public List<ChatStatsResponse> getChatStatsByChannelAndTimeRange(HttpServletRequest request, String channelName, double hours) {
+        String clientId = clientIdentifierService.resolveClientId(request);
+        return getChatStatsByChannelAndTimeRange(clientId, channelName, hours);
+    }
+    
+    /**
+     * HTTP 요청에서 클라이언트 ID를 추출하고 활동 시간을 업데이트합니다.
+     */
+    public void updateClientActivity(HttpServletRequest request) {
+        String clientId = clientIdentifierService.resolveClientId(request);
+        updateClientActivity(clientId);
+    }
+    
+    // 클라이언트별 채팅 데이터 저장: clientId -> channelName -> List<ChatData>
+    private final Map<String, Map<String, List<ChatData>>> clientChatData = new ConcurrentHashMap<>();
+    
+    // 클라이언트별 마지막 활동 시간 추적
+    private final Map<String, LocalDateTime> clientLastActivity = new ConcurrentHashMap<>();
     
     // 메모리 관리 설정
     private static final int MAX_MESSAGES_PER_CHANNEL = 10000; // 채널당 최대 메시지 수
-    private static final int MAX_MESSAGES_PER_SESSION = 50000; // 세션당 최대 메시지 수
-    private static final int SESSION_TIMEOUT_HOURS = 24; // 세션 타임아웃 (시간)
+    private static final int MAX_MESSAGES_PER_CLIENT = 50000; // 클라이언트당 최대 메시지 수
+    private static final int CLIENT_TIMEOUT_HOURS = 24; // 클라이언트 타임아웃 (시간)
     private static final int DATA_RETENTION_HOURS = 48; // 데이터 보관 시간
     
     public static class ChatData {
@@ -40,29 +77,29 @@ public class MemoryChatDataService {
         }
     }
     
-    public void addChatMessage(String sessionId, String username, String channelName, String message) {
-        log.debug("메모리에 채팅 추가: 세션={}, 채널={}, 사용자={}", sessionId, channelName, username);
+    public void addChatMessage(String clientId, String username, String channelName, String message) {
+        log.debug("메모리에 채팅 추가: 클라이언트={}, 채널={}, 사용자={}", clientId, channelName, username);
         
-        // 세션 활동 시간 업데이트
-        sessionLastActivity.put(sessionId, LocalDateTime.now());
+        // 클라이언트 활동 시간 업데이트
+        clientLastActivity.put(clientId, LocalDateTime.now());
         
-        // 세션별 데이터 맵 가져오기 또는 생성
-        Map<String, List<ChatData>> channelData = sessionChatData.computeIfAbsent(sessionId, k -> new ConcurrentHashMap<>());
+        // 클라이언트별 데이터 맵 가져오기 또는 생성
+        Map<String, List<ChatData>> channelData = clientChatData.computeIfAbsent(clientId, k -> new ConcurrentHashMap<>());
         
         // 채널별 채팅 리스트 가져오기 또는 생성
         List<ChatData> chatList = channelData.computeIfAbsent(channelName, k -> Collections.synchronizedList(new ArrayList<>()));
         
         // 메모리 사용량 체크 및 정리
-        checkAndCleanupMemory(sessionId, channelName, chatList);
+        checkAndCleanupMemory(clientId, channelName, chatList);
         
         // 새 채팅 데이터 추가
         ChatData newChat = new ChatData(username, message, channelName, LocalDateTime.now());
         chatList.add(newChat);
         
-        log.debug("채팅 추가 완료: 세션 {} 채널 {} 총 {}개", sessionId, channelName, chatList.size());
+        log.debug("채팅 추가 완료: 클라이언트 {} 채널 {} 총 {}개", clientId, channelName, chatList.size());
     }
     
-    private void checkAndCleanupMemory(String sessionId, String channelName, List<ChatData> chatList) {
+    private void checkAndCleanupMemory(String clientId, String channelName, List<ChatData> chatList) {
         // 1. 채널당 메시지 수 제한
         if (chatList.size() >= MAX_MESSAGES_PER_CHANNEL) {
             int removeCount = chatList.size() - (MAX_MESSAGES_PER_CHANNEL * 3 / 4); // 25% 정리
@@ -72,16 +109,16 @@ public class MemoryChatDataService {
             log.info("채널 {} 메시지 정리: {}개 제거 (남은 메시지: {}개)", channelName, removeCount, chatList.size());
         }
         
-        // 2. 세션당 총 메시지 수 제한
-        int totalSessionMessages = getSessionChatCount(sessionId);
-        if (totalSessionMessages >= MAX_MESSAGES_PER_SESSION) {
-            cleanupOldestChannelData(sessionId);
-            log.info("세션 {} 메시지 수 제한 도달: 오래된 채널 데이터 정리", sessionId);
+        // 2. 클라이언트당 총 메시지 수 제한
+        int totalClientMessages = getClientChatCount(clientId);
+        if (totalClientMessages >= MAX_MESSAGES_PER_CLIENT) {
+            cleanupOldestChannelData(clientId);
+            log.info("클라이언트 {} 메시지 수 제한 도달: 오래된 채널 데이터 정리", clientId);
         }
     }
     
-    private void cleanupOldestChannelData(String sessionId) {
-        Map<String, List<ChatData>> channelData = sessionChatData.get(sessionId);
+    private void cleanupOldestChannelData(String clientId) {
+        Map<String, List<ChatData>> channelData = clientChatData.get(clientId);
         if (channelData == null || channelData.isEmpty()) {
             return;
         }
@@ -106,24 +143,24 @@ public class MemoryChatDataService {
         }
     }
     
-    public List<ChatStatsResponse> getChatStatsByChannel(String sessionId, String channelName) {
-        Map<String, List<ChatData>> channelData = sessionChatData.get(sessionId);
+    public List<ChatStatsResponse> getChatStatsByChannel(String clientId, String channelName) {
+        Map<String, List<ChatData>> channelData = clientChatData.get(clientId);
         if (channelData == null) {
-            log.debug("세션 {} 데이터 없음", sessionId);
+            log.debug("클라이언트 {} 데이터 없음", clientId);
             return new ArrayList<>();
         }
         
         List<ChatData> chatList = channelData.get(channelName);
         if (chatList == null) {
-            log.debug("세션 {} 채널 {} 데이터 없음", sessionId, channelName);
+            log.debug("클라이언트 {} 채널 {} 데이터 없음", clientId, channelName);
             return new ArrayList<>();
         }
         
         return calculateStats(chatList);
     }
     
-    public List<ChatStatsResponse> getChatStatsByChannelAndTimeRange(String sessionId, String channelName, double hours) {
-        Map<String, List<ChatData>> channelData = sessionChatData.get(sessionId);
+    public List<ChatStatsResponse> getChatStatsByChannelAndTimeRange(String clientId, String channelName, double hours) {
+        Map<String, List<ChatData>> channelData = clientChatData.get(clientId);
         if (channelData == null) {
             return new ArrayList<>();
         }
@@ -190,43 +227,43 @@ public class MemoryChatDataService {
         }
     }
     
-    public void clearSessionData(String sessionId) {
-        Map<String, List<ChatData>> removed = sessionChatData.remove(sessionId);
-        sessionLastActivity.remove(sessionId);
+    public void clearClientData(String clientId) {
+        Map<String, List<ChatData>> removed = clientChatData.remove(clientId);
+        clientLastActivity.remove(clientId);
         
         if (removed != null) {
             int totalMessages = removed.values().stream()
                     .mapToInt(List::size)
                     .sum();
-            log.info("세션 {} 메모리 데이터 삭제: {}개 채널, 총 {}개 메시지", 
-                    sessionId, removed.size(), totalMessages);
+            log.info("클라이언트 {} 메모리 데이터 삭제: {}개 채널, 총 {}개 메시지", 
+                    clientId, removed.size(), totalMessages);
         } else {
-            log.debug("세션 {} 메모리 데이터 없음", sessionId);
+            log.debug("클라이언트 {} 메모리 데이터 없음", clientId);
         }
     }
     
     @Scheduled(fixedRate = 300000) // 5분마다 실행
-    public void cleanupInactiveSessionsAndOldData() {
+    public void cleanupInactiveClientsAndOldData() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime sessionTimeoutThreshold = now.minusHours(SESSION_TIMEOUT_HOURS);
+        LocalDateTime clientTimeoutThreshold = now.minusHours(CLIENT_TIMEOUT_HOURS);
         LocalDateTime dataRetentionThreshold = now.minusHours(DATA_RETENTION_HOURS);
         
-        // 1. 비활성 세션 정리
-        Set<String> inactiveSessions = sessionLastActivity.entrySet().stream()
-            .filter(entry -> entry.getValue().isBefore(sessionTimeoutThreshold))
+        // 1. 비활성 클라이언트 정리
+        Set<String> inactiveClients = clientLastActivity.entrySet().stream()
+            .filter(entry -> entry.getValue().isBefore(clientTimeoutThreshold))
             .map(Map.Entry::getKey)
             .collect(Collectors.toSet());
             
-        for (String sessionId : inactiveSessions) {
-            clearSessionData(sessionId);
-            log.info("비활성 세션 {} 정리됨 (마지막 활동: {})", sessionId, sessionLastActivity.get(sessionId));
+        for (String clientId : inactiveClients) {
+            clearClientData(clientId);
+            log.info("비활성 클라이언트 {} 정리됨 (마지막 활동: {})", clientId, clientLastActivity.get(clientId));
         }
         
         // 2. 오래된 메시지 데이터 정리
         int totalCleanedMessages = 0;
-        for (Map.Entry<String, Map<String, List<ChatData>>> sessionEntry : sessionChatData.entrySet()) {
-            String sessionId = sessionEntry.getKey();
-            Map<String, List<ChatData>> channelData = sessionEntry.getValue();
+        for (Map.Entry<String, Map<String, List<ChatData>>> clientEntry : clientChatData.entrySet()) {
+            String clientId = clientEntry.getKey();
+            Map<String, List<ChatData>> channelData = clientEntry.getValue();
             
             for (Map.Entry<String, List<ChatData>> channelEntry : channelData.entrySet()) {
                 String channelName = channelEntry.getKey();
@@ -239,14 +276,14 @@ public class MemoryChatDataService {
                 int cleaned = beforeSize - afterSize;
                 if (cleaned > 0) {
                     totalCleanedMessages += cleaned;
-                    log.debug("세션 {} 채널 {} 오래된 메시지 정리: {}개", sessionId, channelName, cleaned);
+                    log.debug("클라이언트 {} 채널 {} 오래된 메시지 정리: {}개", clientId, channelName, cleaned);
                 }
             }
         }
         
         if (totalCleanedMessages > 0) {
-            log.info("정기 정리 완료: 비활성 세션 {}개, 오래된 메시지 {}개 정리", 
-                inactiveSessions.size(), totalCleanedMessages);
+            log.info("정기 정리 완료: 비활성 클라이언트 {}개, 오래된 메시지 {}개 정리", 
+                inactiveClients.size(), totalCleanedMessages);
         }
         
         // 메모리 상태 로깅
@@ -255,8 +292,8 @@ public class MemoryChatDataService {
     
     private void logMemoryStatus() {
         Map<String, Object> stats = getMemoryStats();
-        log.info("메모리 상태 - 세션: {}개, 총 메시지: {}개", 
-            stats.get("totalSessions"), stats.get("totalMessages"));
+        log.info("메모리 상태 - 클라이언트: {}개, 총 메시지: {}개", 
+            stats.get("totalClients"), stats.get("totalMessages"));
             
         // 메모리 사용량이 높으면 경고
         int totalMessages = (Integer) stats.get("totalMessages");
@@ -265,13 +302,13 @@ public class MemoryChatDataService {
         }
     }
     
-    public void updateSessionActivity(String sessionId) {
-        sessionLastActivity.put(sessionId, LocalDateTime.now());
-        log.debug("세션 {} 활동 시간 업데이트", sessionId);
+    public void updateClientActivity(String clientId) {
+        clientLastActivity.put(clientId, LocalDateTime.now());
+        log.debug("클라이언트 {} 활동 시간 업데이트", clientId);
     }
     
-    public int getSessionChatCount(String sessionId) {
-        Map<String, List<ChatData>> channelData = sessionChatData.get(sessionId);
+    public int getClientChatCount(String clientId) {
+        Map<String, List<ChatData>> channelData = clientChatData.get(clientId);
         if (channelData == null) {
             return 0;
         }
@@ -281,14 +318,14 @@ public class MemoryChatDataService {
                 .sum();
     }
     
-    public Set<String> getSessionChannels(String sessionId) {
-        Map<String, List<ChatData>> channelData = sessionChatData.get(sessionId);
+    public Set<String> getClientChannels(String clientId) {
+        Map<String, List<ChatData>> channelData = clientChatData.get(clientId);
         return channelData != null ? channelData.keySet() : new HashSet<>();
     }
     
     public Map<String, Object> getMemoryStats() {
-        int totalSessions = sessionChatData.size();
-        int totalMessages = sessionChatData.values().stream()
+        int totalClients = clientChatData.size();
+        int totalMessages = clientChatData.values().stream()
                 .flatMap(channelData -> channelData.values().stream())
                 .mapToInt(List::size)
                 .sum();
@@ -296,21 +333,21 @@ public class MemoryChatDataService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime recentThreshold = now.minusHours(1);
         
-        int activeSessions = (int) sessionLastActivity.entrySet().stream()
+        int activeClients = (int) clientLastActivity.entrySet().stream()
             .filter(entry -> entry.getValue().isAfter(recentThreshold))
             .count();
             
         return Map.of(
-            "totalSessions", totalSessions,
-            "activeSessions", activeSessions,
+            "totalClients", totalClients,
+            "activeClients", activeClients,
             "totalMessages", totalMessages,
             "memoryLimits", Map.of(
                 "maxMessagesPerChannel", MAX_MESSAGES_PER_CHANNEL,
-                "maxMessagesPerSession", MAX_MESSAGES_PER_SESSION,
-                "sessionTimeoutHours", SESSION_TIMEOUT_HOURS,
+                "maxMessagesPerClient", MAX_MESSAGES_PER_CLIENT,
+                "clientTimeoutHours", CLIENT_TIMEOUT_HOURS,
                 "dataRetentionHours", DATA_RETENTION_HOURS
             ),
-            "sessionsWithData", sessionChatData.entrySet().stream()
+            "clientsWithData", clientChatData.entrySet().stream()
                     .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> entry.getValue().values().stream().mapToInt(List::size).sum()
