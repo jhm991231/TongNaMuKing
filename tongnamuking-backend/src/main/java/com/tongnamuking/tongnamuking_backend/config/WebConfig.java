@@ -1,6 +1,7 @@
 package com.tongnamuking.tongnamuking_backend.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
@@ -26,5 +27,14 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
+    }
+    
+    @Bean
+    public FilterRegistrationBean<SamsungBrowserCookieFilter> samsungBrowserCookieFilter() {
+        FilterRegistrationBean<SamsungBrowserCookieFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new SamsungBrowserCookieFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(1);
+        return registration;
     }
 }
