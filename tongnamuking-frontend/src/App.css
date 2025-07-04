@@ -1097,7 +1097,7 @@ button:disabled {
   }
 
   .search-container {
-    max-width: 110px;
+    max-width: 80px;
   }
 
   .channel-input {
@@ -1107,31 +1107,37 @@ button:disabled {
 
   .time-select {
     padding: 0.2rem;
-    font-size: 0.7rem;
-    max-width: 80px;
+    font-size: 0.55rem;
+    max-width: 70px;
   }
 
   button {
-    padding: 0.5rem;
+    padding: 0.35rem;
     font-size: 0.7em;
+    max-width: 115px;
   }
 
   .search-result-item {
     padding: 0.1rem !important;
-    min-height: 40px !important;
+    min-height: 35px !important;
+    gap: 0.3rem !important;
+  }
+
+  .channel-info {
+    gap: 0.5rem !important;
   }
 
   .channel-image-container {
-    width: 20px !important;
-    height: 20px !important;
+    width: 15px !important;
+    height: 15px !important;
   }
 
   .channel-name {
-    font-size: 0.6rem !important;
+    font-size: 0.4rem !important;
   }
 
   .follower-count {
-    font-size: 0.4rem !important;
+    font-size: 0.3rem !important;
   }
 
   .live-badge {
@@ -1283,5 +1289,132 @@ button:disabled {
   .rank.crown::before {
     font-size: 0.7rem !important;
     top: -10px !important;
+  }
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+  body,
+  html {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  #root {
+    background-color: #1a1a1a;
+  }
+
+  .app {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  .app h1 {
+    color: #ffffff;
+  }
+
+  .channel-input {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .channel-input:focus {
+    border-color: #66bb6a;
+  }
+
+  .time-select {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .search-results {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .search-result-item {
+    border-bottom-color: #444;
+  }
+
+  .search-result-item:hover {
+    background-color: #333;
+  }
+
+  .channel-name {
+    color: #e0e0e0;
+  }
+
+  .follower-count {
+    color: #b0b0b0;
+  }
+
+  .channel-image-placeholder {
+    background: linear-gradient(135deg, #333 0%, #444 100%);
+    color: #999;
+  }
+
+  .stats-list {
+    background-color: #1a1a1a;
+  }
+
+  .stat-item {
+    border-bottom-color: #333;
+    background-color: transparent;
+  }
+
+  .stat-item:hover {
+    background-color: #2d2d2d;
+  }
+
+  .display-name {
+    color: #e0e0e0;
+  }
+
+  .message-count {
+    color: #e0e0e0;
+  }
+
+  .rank {
+    color: #e0e0e0;
+  }
+
+  .active-collectors,
+  .active-collectors-side,
+  .active-collectors-inline,
+  .active-collectors-fixed {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .active-collectors h3,
+  .active-collectors-side h4,
+  .active-collectors-inline h4,
+  .active-collectors-fixed h4 {
+    color: #e0e0e0;
+  }
+
+  .collector-item,
+  .collector-item-side,
+  .collector-item-inline,
+  .collector-item-fixed {
+    background-color: #1a1a1a;
+    border-color: #444;
+  }
+
+  .channel-name-side,
+  .channel-name-inline,
+  .channel-name-fixed {
+    color: #e0e0e0;
+  }
+
+  .collection-status {
+    background-color: #2d2d2d;
+    color: #66bb6a;
+  }
+
+  .loading-container {
+    color: #b0b0b0;
   }
 }
