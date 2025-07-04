@@ -145,7 +145,7 @@
   }
 
   .dogcake-chatdog-settings-button {
-    font-size: 7px !important;
+    font-size: 8px !important;
     padding: 4px 8px !important;
     text-align: center;
     max-width: 80px;
@@ -207,7 +207,7 @@
   }
 
   .dogcake-chatdog-settings-button {
-    font-size: 7px !important;
+    font-size: 8px !important;
     padding: 4px 8px !important;
     text-align: center;
     max-width: 80px;
@@ -916,6 +916,88 @@
   .dogcake-character-left,
   .dogcake-character-right {
     display: none;
+  }
+}
+
+/* 모바일 순위 부분 글씨 크기 조정 */
+@media (max-width: 768px) {
+  .dogcake-rank {
+    font-size: 1rem;
+  }
+  
+  .dogcake-display-name {
+    font-size: 1rem;
+  }
+  
+  .dogcake-message-count {
+    font-size: 1.1rem;
+  }
+  
+  .dogcake-stat-item {
+    min-height: 40px;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .dogcake-user-info {
+    margin-left: 0.8rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .dogcake-rank {
+    font-size: 0.9rem;
+    min-width: 40px;
+  }
+  
+  .dogcake-display-name {
+    font-size: 0.9rem;
+  }
+  
+  .dogcake-message-count {
+    font-size: 1rem;
+  }
+  
+  .dogcake-stat-item {
+    min-height: 35px;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .dogcake-user-info {
+    margin-left: 0.6rem;
+  }
+  
+  .dogcake-rank.crown::before {
+    font-size: 0.8rem;
+    top: -12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dogcake-rank {
+    font-size: 0.8rem;
+    min-width: 35px;
+  }
+  
+  .dogcake-display-name {
+    font-size: 0.8rem;
+  }
+  
+  .dogcake-message-count {
+    font-size: 0.9rem;
+  }
+  
+  .dogcake-stat-item {
+    min-height: 30px;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .dogcake-user-info {
+    margin-left: 0.5rem;
+  }
+  
+  .dogcake-rank.crown::before {
+    font-size: 0.7rem;
+    top: -10px;
   }
 }
 
