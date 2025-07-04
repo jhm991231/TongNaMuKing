@@ -1522,3 +1522,181 @@
     opacity: 0.7;
   }
 }
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+  body,
+  html {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  .dogcake-app {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  .dogcake-app h1 {
+    color: #ffffff;
+  }
+
+  .dogcake-time-select {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .dogcake-loading {
+    color: #b0b0b0;
+  }
+
+  .dogcake-collecting {
+    color: #66bb6a;
+  }
+
+  .dogcake-error-text {
+    color: #ff6b6b;
+  }
+
+  .dogcake-retry-button {
+    background-color: #2196f3;
+  }
+
+  .dogcake-retry-button:hover {
+    background-color: #1976d2;
+  }
+
+  /* 저챗견 설정 패널 다크모드 */
+  .dogcake-chatdog-settings-panel {
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    color: #e0e0e0;
+    border: 1px solid #444;
+  }
+
+  .dogcake-chatdog-settings-panel h3 {
+    color: #ffffff;
+  }
+
+  .dogcake-chatdog-settings-panel p {
+    color: #b0b0b0;
+  }
+
+  .dogcake-toggle-checkbox {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .dogcake-toggle-text {
+    color: #e0e0e0;
+  }
+
+  .dogcake-manual-description {
+    color: #b0b0b0;
+  }
+
+  .dogcake-game-segment {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .dogcake-segment-title {
+    color: #ffffff;
+  }
+
+  .dogcake-time-input input {
+    background-color: #1a1a1a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .dogcake-time-input input:focus {
+    border-color: #66bb6a;
+    background-color: #2d2d2d;
+  }
+
+  .dogcake-time-input label {
+    color: #e0e0e0;
+  }
+
+  .dogcake-time-input span {
+    color: #b0b0b0;
+  }
+
+  .dogcake-auto-mode-description p {
+    color: #b0b0b0;
+  }
+
+  .dogcake-chatdog-result {
+    background-color: #2d2d2d;
+    border: 1px solid #444;
+  }
+
+  .dogcake-ratio-percentage {
+    color: #ffeb3b;
+  }
+
+  .dogcake-ratio-percentage strong {
+    color: #ffc107;
+  }
+
+  .dogcake-ratio-details p {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  /* 순위 목록 다크모드 */
+  .dogcake-stats-list {
+    background-color: #1a1a1a;
+  }
+
+  .dogcake-stat-item {
+    border-bottom-color: #333;
+    background-color: transparent;
+  }
+
+  .dogcake-stat-item:hover {
+    background-color: #2d2d2d;
+  }
+
+  .dogcake-display-name {
+    color: #e0e0e0;
+  }
+
+  .dogcake-message-count {
+    color: #e0e0e0;
+  }
+
+  .dogcake-rank {
+    color: #e0e0e0;
+  }
+
+  /* 순위별 색상 다크모드에서도 유지 */
+  .dogcake-stat-item.rank-1 .dogcake-rank {
+    color: #e6b800;
+  }
+
+  .dogcake-stat-item.rank-1 .dogcake-message-count {
+    color: #e6b800;
+  }
+
+  .dogcake-stat-item.rank-2 .dogcake-rank {
+    color: #8c8c8c;
+  }
+
+  .dogcake-stat-item.rank-2 .dogcake-message-count {
+    color: #8c8c8c;
+  }
+
+  .dogcake-stat-item.rank-3 .dogcake-rank {
+    color: #b8610a;
+  }
+
+  .dogcake-stat-item.rank-3 .dogcake-message-count {
+    color: #b8610a;
+  }
+
+  /* 저챗견 하이라이트 다크모드 */
+  .chatdog-highlight {
+    color: #ff9999 !important;
+  }
+}
