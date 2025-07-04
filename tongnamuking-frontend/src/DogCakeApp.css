@@ -22,22 +22,28 @@
 }
 
 @media (max-width: 768px) {
+  .dogcake-app {
+    padding-top: 150px;
+  }
   .dogcake-app.panel-open {
-    padding-top: 900px;
+    padding-top: 320px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 1150px;
+    padding-top: 570px !important;
   }
 }
 
 @media (max-width: 600px) {
+  .dogcake-app {
+    padding-top: 150px;
+  }
   .dogcake-app.panel-open {
-    padding-top: 900px;
+    padding-top: 320px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 1200px;
+    padding-top: 570px !important;
   }
 }
 
@@ -924,20 +930,20 @@
   .dogcake-rank {
     font-size: 1rem;
   }
-  
+
   .dogcake-display-name {
     font-size: 1rem;
   }
-  
+
   .dogcake-message-count {
     font-size: 1.1rem;
   }
-  
+
   .dogcake-stat-item {
     min-height: 40px;
     padding: 0.4rem 0.8rem;
   }
-  
+
   .dogcake-user-info {
     margin-left: 0.8rem;
   }
@@ -948,24 +954,24 @@
     font-size: 0.9rem;
     min-width: 40px;
   }
-  
+
   .dogcake-display-name {
     font-size: 0.9rem;
   }
-  
+
   .dogcake-message-count {
     font-size: 1rem;
   }
-  
+
   .dogcake-stat-item {
     min-height: 35px;
     padding: 0.3rem 0.6rem;
   }
-  
+
   .dogcake-user-info {
     margin-left: 0.6rem;
   }
-  
+
   .dogcake-rank.crown::before {
     font-size: 0.8rem;
     top: -12px;
@@ -977,24 +983,24 @@
     font-size: 0.8rem;
     min-width: 35px;
   }
-  
+
   .dogcake-display-name {
     font-size: 0.8rem;
   }
-  
+
   .dogcake-message-count {
     font-size: 0.9rem;
   }
-  
+
   .dogcake-stat-item {
     min-height: 30px;
     padding: 0.25rem 0.5rem;
   }
-  
+
   .dogcake-user-info {
     margin-left: 0.5rem;
   }
-  
+
   .dogcake-rank.crown::before {
     font-size: 0.7rem;
     top: -10px;
