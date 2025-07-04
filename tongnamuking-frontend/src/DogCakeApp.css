@@ -10,27 +10,35 @@
   padding-top: 500px;
 }
 
+.dogcake-app.panel-open {
+  padding-top: 680px !important;
+}
+
+.dogcake-app.panel-expanded {
+  padding-top: 1000px !important;
+}
+
 /* 모바일에서 저챗견 패널이 열렸을 때 */
 @media (max-width: 1000px) {
   .dogcake-app.panel-open {
-    padding-top: 900px;
+    padding-top: 1000px;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 1200px;
+    padding-top: 1300px;
   }
 }
 
 @media (max-width: 768px) {
   .dogcake-app {
-    padding-top: 180px !important;
+    padding-top: 400px !important;
   }
   .dogcake-app.panel-open {
-    padding-top: 320px !important;
+    padding-top: 950px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 570px !important;
+    padding-top: 1200px !important;
   }
 }
 
@@ -39,11 +47,11 @@
     padding-top: 300px;
   }
   .dogcake-app.panel-open {
-    padding-top: 300px !important;
+    padding-top: 500px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 550px !important;
+    padding-top: 900px !important;
   }
 }
 
@@ -740,8 +748,8 @@
 
   .dogcake-time-input input {
     font-size: 13px !important;
-    padding: 6px 10px !important;
-    width: 70px !important;
+    padding: 4px 6px !important;
+    width: 50px !important;
   }
 
   .dogcake-time-input span {
@@ -800,8 +808,8 @@
 
   .dogcake-time-input input {
     font-size: 12px !important;
-    padding: 5px 8px !important;
-    width: 60px !important;
+    padding: 3px 5px !important;
+    width: 45px !important;
   }
 
   .dogcake-time-input span {
@@ -850,9 +858,9 @@
   }
 
   .dogcake-time-input input {
-    font-size: 11px;
-    padding: 4px 6px;
-    width: 50px;
+    font-size: 11px !important;
+    padding: 2px 4px !important;
+    width: 40px !important;
   }
 
   .dogcake-time-input span {
