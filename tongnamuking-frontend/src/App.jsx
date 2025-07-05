@@ -392,214 +392,202 @@ function App() {
   };
 
   return (
-    <>
-      {activeCollectors.size > 0 && (
-        <div
-          className="active-collectors-fixed"
-          style={{
-            transform:
-              stats.length > 0
-                ? `translate(-50%, -50%) translateX(450px) translateY(${
-                    -20 - Math.min(stats.length, 10) * 40
-                  }px)`
-                : undefined,
-          }}
-        >
-          <h4>
-            🔴 수집중 ({activeCollectors.size}/{maxCollectors})
-          </h4>
-          <div className="collector-list-fixed">
-            {Array.from(activeCollectors).map((channelId) => (
-              <div key={channelId} className="collector-item-fixed">
-                <span
-                  className="channel-name-fixed clickable-channel"
-                  onClick={async () => {
-                    const channelName = channelIdToName.get(channelId);
-                    if (channelName) {
-                      // 이전 데이터 즉시 초기화
-                      setStats([]);
-                      setLoading(true);
+    <div className="app">
+      <div className="header">
+        <div>
+          <h1>🪵 채팅 통나무 순위</h1>
 
-                      // 해당 채널명으로 설정
-                      setChannelName(channelName);
-                      setSelectedChannelId(channelId);
-                      setShowSearchResults(false);
+          <div className="controls">
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="채널명을 입력하세요"
+                value={channelName}
+                onChange={handleChannelInputChange}
+                onFocus={handleInputFocus}
+                className="channel-input"
+              />
+              {showSearchResults && searchResults.length > 0 && (
+                <div className="search-results">
+                  {searchResults.map((channel, index) => (
+                    <div
+                      key={channel.channelId || `channel-${index}`}
+                      className="search-result-item"
+                      onClick={() => selectChannel(channel)}
+                    >
+                      <div className="channel-info">
+                        <div className="channel-image-container">
+                          {channel.channelImageUrl ? (
+                            <img
+                              src={channel.channelImageUrl}
+                              alt={channel.channelName}
+                              className="channel-image"
+                            />
+                          ) : (
+                            <div className="channel-image-placeholder"></div>
+                          )}
+                        </div>
+                        <div className="channel-details">
+                          <div className="channel-name">
+                            {channel.channelName}
+                          </div>
+                          {channel.followerCount > 0 && (
+                            <div className="follower-count">
+                              팔로워 {channel.followerCount.toLocaleString()}명
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="channel-actions">
+                        {channel.openLive && (
+                          <div className="live-badge">LIVE</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                      // 즉시 새로운 데이터 로드 (채널명 직접 전달)
-                      await fetchChatStats(channelName);
-                    }
-                  }}
-                  title={`${
-                    channelIdToName.get(channelId) || channelId
-                  } 채팅 순위 보기`}
-                >
-                  {channelIdToName.get(channelId) ||
-                    `${channelId.substring(0, 8)}...`}
-                </span>
-                <button
-                  className="stop-small-button-fixed"
-                  onClick={async () => {
-                    console.log(`🔴 X버튼 클릭: ${channelId}`);
-                    try {
-                      const response = await fetch(
-                        `${API_BASE_URL}/api/multi-channel-collection/stop/${channelId}`,
-                        {
-                          method: "POST",
-                          headers: getApiHeaders(),
-                        }
-                      );
+            <div className="controls-row">
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(Number(e.target.value))}
+                className="time-select"
+              >
+                <option value={0}>전체 기간</option>
+                <option value={5 / 60}>최근 5분</option>
+                <option value={10 / 60}>최근 10분</option>
+                <option value={0.5}>최근 30분</option>
+                <option value={1}>최근 1시간</option>
+              </select>
 
-                      console.log(`📡 응답 상태: ${response.status}`);
-                      console.log(
-                        `🍪 응답 헤더:`,
-                        Object.fromEntries(response.headers.entries())
-                      );
+              <button
+                onClick={
+                  selectedChannelId && activeCollectors.has(selectedChannelId)
+                    ? stopNodejsChatCollection
+                    : startNodejsChatCollection
+                }
+                disabled={loading || !channelName.trim() || !selectedChannelId}
+                className={
+                  selectedChannelId && activeCollectors.has(selectedChannelId)
+                    ? "stop-button"
+                    : "start-button"
+                }
+              >
+                {loading
+                  ? "로딩 중..."
+                  : selectedChannelId && activeCollectors.has(selectedChannelId)
+                  ? "실시간 업데이트 중지"
+                  : activeCollectors.size >= maxCollectors
+                  ? `최대 ${maxCollectors}개까지`
+                  : "실시간 업데이트 시작"}
+              </button>
+            </div>
+          </div>
+        </div>
+        {activeCollectors.size > 0 && (
+          <div className="active-collectors-fixed">
+            <h4>
+              🔴 수집중 ({activeCollectors.size}/{maxCollectors})
+            </h4>
+            <div className="collector-list-fixed">
+              {Array.from(activeCollectors).map((channelId) => (
+                <div key={channelId} className="collector-item-fixed">
+                  <span
+                    className="channel-name-fixed clickable-channel"
+                    onClick={async () => {
+                      const channelName = channelIdToName.get(channelId);
+                      if (channelName) {
+                        // 이전 데이터 즉시 초기화
+                        setStats([]);
+                        setLoading(true);
 
-                      const data = await response.json();
-                      console.log(`📄 응답 데이터:`, data);
+                        // 해당 채널명으로 설정
+                        setChannelName(channelName);
+                        setSelectedChannelId(channelId);
+                        setShowSearchResults(false);
 
-                      if (data.success) {
-                        setActiveCollectors(new Set(data.activeChannels));
-                        console.log(`✅ 수집 중지 성공`);
-                      } else {
-                        console.error(`❌ 수집 중지 실패: ${data.message}`);
-                        alert(`수집 중지 실패: ${data.message}`);
+                        // 즉시 새로운 데이터 로드 (채널명 직접 전달)
+                        await fetchChatStats(channelName);
                       }
-                    } catch (error) {
-                      console.error(`💥 X버튼 에러:`, error);
-                      alert(`X버튼 오류: ${error.message}`);
-                    }
-                  }}
-                >
-                  ✕
-                </button>
+                    }}
+                    title={`${
+                      channelIdToName.get(channelId) || channelId
+                    } 채팅 순위 보기`}
+                  >
+                    {channelIdToName.get(channelId) ||
+                      `${channelId.substring(0, 8)}...`}
+                  </span>
+                  <button
+                    className="stop-small-button-fixed"
+                    onClick={async () => {
+                      console.log(`🔴 X버튼 클릭: ${channelId}`);
+                      try {
+                        const response = await fetch(
+                          `${API_BASE_URL}/api/multi-channel-collection/stop/${channelId}`,
+                          {
+                            method: "POST",
+                            headers: getApiHeaders(),
+                          }
+                        );
+
+                        console.log(`📡 응답 상태: ${response.status}`);
+                        console.log(
+                          `🍪 응답 헤더:`,
+                          Object.fromEntries(response.headers.entries())
+                        );
+
+                        const data = await response.json();
+                        console.log(`📄 응답 데이터:`, data);
+
+                        if (data.success) {
+                          setActiveCollectors(new Set(data.activeChannels));
+                          console.log(`✅ 수집 중지 성공`);
+                        } else {
+                          console.error(`❌ 수집 중지 실패: ${data.message}`);
+                          alert(`수집 중지 실패: ${data.message}`);
+                        }
+                      } catch (error) {
+                        console.error(`💥 X버튼 에러:`, error);
+                        alert(`X버튼 오류: ${error.message}`);
+                      }
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!loading && stats.length > 0 && (
+        <div className="stats-container">
+          <div className="stats-header"></div>
+          <div className="stats-list">
+            {stats.slice(0, 10).map((stat, index) => (
+              <div key={stat.userId} className={`stat-item rank-${index + 1}`}>
+                <div className={`rank ${index === 0 ? "crown" : ""}`}>
+                  #{stat.rank}
+                </div>
+                <div className="user-info">
+                  <div className="display-name">{stat.username}</div>
+                </div>
+                <div className="message-count">{stat.messageCount}개</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="app">
-        <h1>🪵 채팅 통나무 순위</h1>
-
-        <div className="controls">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="채널명을 입력하세요"
-              value={channelName}
-              onChange={handleChannelInputChange}
-              onFocus={handleInputFocus}
-              className="channel-input"
-            />
-            {showSearchResults && searchResults.length > 0 && (
-              <div className="search-results">
-                {searchResults.map((channel, index) => (
-                  <div
-                    key={channel.channelId || `channel-${index}`}
-                    className="search-result-item"
-                    onClick={() => selectChannel(channel)}
-                  >
-                    <div className="channel-info">
-                      <div className="channel-image-container">
-                        {channel.channelImageUrl ? (
-                          <img
-                            src={channel.channelImageUrl}
-                            alt={channel.channelName}
-                            className="channel-image"
-                          />
-                        ) : (
-                          <div className="channel-image-placeholder"></div>
-                        )}
-                      </div>
-                      <div className="channel-details">
-                        <div className="channel-name">
-                          {channel.channelName}
-                        </div>
-                        {channel.followerCount > 0 && (
-                          <div className="follower-count">
-                            팔로워 {channel.followerCount.toLocaleString()}명
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="channel-actions">
-                      {channel.openLive && (
-                        <div className="live-badge">LIVE</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="controls-row">
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(Number(e.target.value))}
-              className="time-select"
-            >
-              <option value={0}>전체 기간</option>
-              <option value={5 / 60}>최근 5분</option>
-              <option value={10 / 60}>최근 10분</option>
-              <option value={0.5}>최근 30분</option>
-              <option value={1}>최근 1시간</option>
-            </select>
-
-            <button
-              onClick={
-                selectedChannelId && activeCollectors.has(selectedChannelId)
-                  ? stopNodejsChatCollection
-                  : startNodejsChatCollection
-              }
-              disabled={loading || !channelName.trim() || !selectedChannelId}
-              className={
-                selectedChannelId && activeCollectors.has(selectedChannelId)
-                  ? "stop-button"
-                  : "start-button"
-              }
-            >
-              {loading
-                ? "로딩 중..."
-                : selectedChannelId && activeCollectors.has(selectedChannelId)
-                ? "실시간 업데이트 중지"
-                : activeCollectors.size >= maxCollectors
-                ? `최대 ${maxCollectors}개까지`
-                : "실시간 업데이트 시작"}
-            </button>
-          </div>
+      {loading && (
+        <div className="loading-container">
+          <div>로딩 중...</div>
         </div>
-
-        {!loading && stats.length > 0 && (
-          <div className="stats-container">
-            <div className="stats-header"></div>
-            <div className="stats-list">
-              {stats.slice(0, 10).map((stat, index) => (
-                <div
-                  key={stat.userId}
-                  className={`stat-item rank-${index + 1}`}
-                >
-                  <div className={`rank ${index === 0 ? "crown" : ""}`}>
-                    #{stat.rank}
-                  </div>
-                  <div className="user-info">
-                    <div className="display-name">{stat.username}</div>
-                  </div>
-                  <div className="message-count">{stat.messageCount}개</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {loading && (
-          <div className="loading-container">
-            <div>로딩 중...</div>
-          </div>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
