@@ -957,6 +957,7 @@ button:disabled {
   .controls-row > .time-select,
   .controls-row > button {
     flex: 1;
+    width: auto !important;
   }
 
   .search-container {
@@ -1131,6 +1132,7 @@ button:disabled {
   .controls-row > .time-select,
   .controls-row > button {
     flex: 1;
+    width: auto !important;
   }
 
   .search-container {
@@ -1263,6 +1265,7 @@ button:disabled {
   .controls-row > .time-select,
   .controls-row > button {
     flex: 1;
+    width: auto !important;
   }
 
   .search-container,
