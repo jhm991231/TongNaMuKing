@@ -534,39 +534,41 @@ function App() {
             )}
           </div>
 
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(Number(e.target.value))}
-            className="time-select"
-          >
-            <option value={0}>전체 기간</option>
-            <option value={5 / 60}>최근 5분</option>
-            <option value={10 / 60}>최근 10분</option>
-            <option value={0.5}>최근 30분</option>
-            <option value={1}>최근 1시간</option>
-          </select>
+          <div className="controls-row">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(Number(e.target.value))}
+              className="time-select"
+            >
+              <option value={0}>전체 기간</option>
+              <option value={5 / 60}>최근 5분</option>
+              <option value={10 / 60}>최근 10분</option>
+              <option value={0.5}>최근 30분</option>
+              <option value={1}>최근 1시간</option>
+            </select>
 
-          <button
-            onClick={
-              selectedChannelId && activeCollectors.has(selectedChannelId)
-                ? stopNodejsChatCollection
-                : startNodejsChatCollection
-            }
-            disabled={loading || !channelName.trim() || !selectedChannelId}
-            className={
-              selectedChannelId && activeCollectors.has(selectedChannelId)
-                ? "stop-button"
-                : "start-button"
-            }
-          >
-            {loading
-              ? "로딩 중..."
-              : selectedChannelId && activeCollectors.has(selectedChannelId)
-              ? "실시간 업데이트 중지"
-              : activeCollectors.size >= maxCollectors
-              ? `최대 ${maxCollectors}개까지`
-              : "실시간 업데이트 시작"}
-          </button>
+            <button
+              onClick={
+                selectedChannelId && activeCollectors.has(selectedChannelId)
+                  ? stopNodejsChatCollection
+                  : startNodejsChatCollection
+              }
+              disabled={loading || !channelName.trim() || !selectedChannelId}
+              className={
+                selectedChannelId && activeCollectors.has(selectedChannelId)
+                  ? "stop-button"
+                  : "start-button"
+              }
+            >
+              {loading
+                ? "로딩 중..."
+                : selectedChannelId && activeCollectors.has(selectedChannelId)
+                ? "실시간 업데이트 중지"
+                : activeCollectors.size >= maxCollectors
+                ? `최대 ${maxCollectors}개까지`
+                : "실시간 업데이트 시작"}
+            </button>
+          </div>
         </div>
 
         {!loading && stats.length > 0 && (
