@@ -12,7 +12,7 @@ html {
   height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: start;
 }
 
 .app {
@@ -25,7 +25,7 @@ html {
   align-items: center;
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .app {
     padding-top: 300px !important;
   }
@@ -41,7 +41,7 @@ html {
   .app {
     padding-top: 200px !important;
   }
-}
+} */
 
 .app h1 {
   color: #333;
@@ -1070,8 +1070,15 @@ button:disabled {
 }
 
 @media (max-width: 600px) {
+  #root {
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+
   .app {
     padding: 0.5rem 0.5rem 30px 0.5rem;
+    padding-top: 0px !important;
+    justify-content: flex-start !important;
   }
 
   .app h1 {

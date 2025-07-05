@@ -7,18 +7,9 @@
   justify-content: flex-start;
   align-items: center;
   min-height: 100vh;
-  padding-top: 500px;
 }
 
-.dogcake-app.panel-open {
-  padding-top: 680px !important;
-}
-
-.dogcake-app.panel-expanded {
-  padding-top: 1000px !important;
-}
-
-/* 모바일에서 저챗견 패널이 열렸을 때 */
+/* 모바일에서 저챗견 패널이 열렸을 때
 @media (max-width: 1000px) {
   .dogcake-app.panel-open {
     padding-top: 1000px;
@@ -44,16 +35,16 @@
 
 @media (max-width: 600px) {
   .dogcake-app {
-    padding-top: 300px;
+    padding-top: 0px !important;
   }
   .dogcake-app.panel-open {
-    padding-top: 500px !important;
+    padding-top: 0px !important;
   }
 
   .dogcake-app.panel-expanded {
-    padding-top: 900px !important;
+    padding-top: 0px !important;
   }
-}
+} */
 
 .dogcake-app h1 {
   color: #333;
