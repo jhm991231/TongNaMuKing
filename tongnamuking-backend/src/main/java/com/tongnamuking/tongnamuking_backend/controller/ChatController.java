@@ -30,11 +30,11 @@ public class ChatController {
             System.out.println("멀티채널 채팅 수신 - 채널: " + channelName + 
                              ", 사용자: " + request.getUsername() + 
                              ", 메시지: " + request.getMessage() +
-                             ", 세션: " + request.getSessionId());
+                             ", 클라이언트: " + request.getClientId());
             
             // 멀티채널 채팅을 메모리에 저장 (임시 보관)
             memoryChatDataService.addChatMessage(
-                request.getSessionId(),
+                request.getClientId(),
                 request.getUsername(),
                 channelName,
                 request.getMessage()

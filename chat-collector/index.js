@@ -8,20 +8,20 @@ class ChatCollector {
     this.isCollecting = false;
     this.channelId = null;
     this.channelName = null;
-    this.sessionId = null;
+    this.clientId = null;
     this.backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
     this.currentCategory = null;
     this.categoryCheckInterval = null;
   }
 
-  async startCollection(channelId, sessionId) {
+  async startCollection(channelId, clientId) {
     if (this.isCollecting) {
       console.log("이미 수집 중입니다.");
       return false;
     }
 
     try {
-      console.log(`채팅 수집 시작: ${channelId}, 세션: ${sessionId}`);
+      console.log(`채팅 수집 시작: ${channelId}, 클라이언트: ${clientId}`);
 
       // 채널 정보 조회
       const channel = await this.client.channel(channelId);
@@ -42,10 +42,10 @@ class ChatCollector {
       this.isCollecting = true;
       this.channelId = channelId;
       this.channelName = channel.channelName;
-      this.sessionId = sessionId;
+      this.clientId = clientId;
 
       // 카테고리 모니터링 시작 (독케익 전용)
-      if (sessionId === "DOGCAKE_SESSION") {
+      if (clientId === "DOGCAKE_SESSION") {
         this.startCategoryMonitoring(channelId);
       }
 
@@ -91,7 +91,7 @@ class ChatCollector {
         type: "chat",
         channelId: this.channelId,
         channelName: this.channelName,
-        sessionId: this.sessionId,
+        clientId: this.clientId,
         userId: chat.profile.userIdHash,
         username: chat.profile.nickname,
         message: message,
@@ -114,7 +114,7 @@ class ChatCollector {
         type: "donation",
         channelId: this.channelId,
         channelName: this.channelName,
-        sessionId: this.sessionId,
+        clientId: this.clientId,
         userId: donation.profile.userIdHash,
         username: donation.profile.nickname,
         message: donation.message,
@@ -129,14 +129,14 @@ class ChatCollector {
   async sendToBackend(data) {
     try {
       // 독케익 전용 수집기인지 판단 (세션ID로만)
-      const isDogCake = data.sessionId === "DOGCAKE_SESSION";
+      const isDogCake = data.clientId === "DOGCAKE_SESSION";
 
       // URL 선택: 독케익 전용이면 독케익 API, 아니면 범용 API
       const endpoint = isDogCake
         ? "/api/dogcake-collection/message"
         : "/api/chat/message/from-collector";
 
-      console.log(`메시지 전송: ${endpoint} (세션: ${data.sessionId})`);
+      console.log(`메시지 전송: ${endpoint} (클라이언트: ${data.clientId})`);
 
       await axios.post(`${this.backendUrl}${endpoint}`, data, {
         headers: {
@@ -231,7 +231,7 @@ class ChatCollector {
       this.isCollecting = false;
       this.channelId = null;
       this.channelName = null;
-      this.sessionId = null;
+      this.clientId = null;
       this.chat = null;
       this.currentCategory = null;
 
@@ -247,7 +247,7 @@ class ChatCollector {
     return {
       isCollecting: this.isCollecting,
       channelId: this.channelId,
-      sessionId: this.sessionId,
+      clientId: this.clientId,
     };
   }
 }
@@ -264,14 +264,12 @@ process.on("SIGINT", async () => {
 
 // 명령줄 인자로 채널 ID와 세션 ID 받기
 const channelId = process.argv[2];
-const sessionId = process.argv[3];
+const clientId = process.argv[3];
 
-if (channelId && sessionId) {
+if (channelId && clientId) {
   console.log("채팅 수집기 시작...");
-  await collector.startCollection(channelId, sessionId);
+  await collector.startCollection(channelId, clientId);
 } else {
-  console.log("사용법: node index.js <channelId> <sessionId>");
-  console.log(
-    "예시: node index.js a7e175625fdea5a7d98428302b7aa57f SESSION123"
-  );
+  console.log("사용법: node index.js <channelId> <clientId>");
+  console.log("예시: node index.js a7e175625fdea5a7d98428302b7aa57f CLIENT123");
 }
