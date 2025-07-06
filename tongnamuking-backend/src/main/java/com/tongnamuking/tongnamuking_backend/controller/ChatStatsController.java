@@ -50,7 +50,7 @@ public class ChatStatsController {
         return ResponseEntity.ok(stats);
     }
     
-    @GetMapping("/session/channel/{channelName}")
+    @GetMapping("/client/channel/{channelName}")
     @Operation(summary = "클라이언트별 채널 채팅 통계 조회", description = "지정된 클라이언트의 채널별 채팅 통계를 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "통계 조회 성공"),

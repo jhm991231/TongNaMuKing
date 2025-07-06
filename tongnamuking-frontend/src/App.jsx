@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import "./App.css";
 
@@ -295,8 +296,8 @@ function App() {
     try {
       const url =
         timeRange > 0
-          ? `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}?hours=${timeRange}`
-          : `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}`;
+          ? `${API_BASE_URL}/api/chat-stats/client/channel/${nameToUse}?hours=${timeRange}`
+          : `${API_BASE_URL}/api/chat-stats/client/channel/${nameToUse}`;
 
       // 10초 타임아웃 설정
       const controller = new AbortController();
