@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useState, useEffect, useCallback } from "react";
 import "./DogCakeApp.css";
 
 // API 기본 URL 환경변수로 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 import dogcakeImage1 from "./assets/1.jpeg";
 import dogcakeImage2 from "./assets/20.jpeg";
 import dogRorong from "./assets/dogrorong.png";
@@ -14,7 +16,6 @@ function DogCakeApp() {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState(0);
-  const [chatCollectionStatus, setChatCollectionStatus] = useState(null);
   const [isCollecting, setIsCollecting] = useState(false);
 
   // 저챗견 비율 관련 상태
@@ -31,33 +32,41 @@ function DogCakeApp() {
   const DOGCAKE_CHANNEL = {
     channelId: "b68af124ae2f1743a1dcbf5e2ab41e0b", // 독케익 채널 ID
     channelName: "독케익",
-    displayName: "독케익",
   };
 
-  useEffect(() => {
-    checkCollectionStatus();
-    checkNodejsCollectionStatus();
-    // 독케익은 항상 수집되어야 하므로 자동으로 시작 시도
-    autoStartCollection();
-  }, []);
-
-  const autoStartCollection = async () => {
+  const initializeDogCakeCollection = useCallback(async () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/dogcake-collection/status`
       );
       const data = await response.json();
-      const isDogCakeCollecting = data.isCollecting;
 
-      // 독케익이 수집 중이 아니면 자동으로 시작 (알림 없이)
-      if (!isDogCakeCollecting) {
+      setIsCollecting(data.isCollecting);
+
+      // 수집 중이 아니면 자동으로 시작
+      if (!data.isCollecting) {
         console.log("독케익 자동 수집 시작 시도...");
-        await startChatCollection(false);
+        const startResponse = await fetch(
+          `${API_BASE_URL}/api/dogcake-collection/start`,
+          {
+            method: "POST",
+          }
+        );
+        const startData = await startResponse.json();
+
+        if (startData.success) {
+          setIsCollecting(true);
+          setTimeout(() => fetchChatStats(), 1000);
+        }
       }
     } catch (error) {
-      console.error("자동 수집 시작 실패:", error);
+      console.error("독케익 초기화 실패:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    initializeDogCakeCollection();
+  }, [initializeDogCakeCollection]);
 
   // 실시간 순위 업데이트를 위한 useEffect (항상 실행)
   useEffect(() => {
@@ -66,7 +75,7 @@ function DogCakeApp() {
     if (isCollecting) {
       // 즉시 업데이트
       fetchChatStats();
-      // 3초마다 순위 자동 업데이트
+      // 10초마다 순위 자동 업데이트
       interval = setInterval(() => {
         fetchChatStats();
       }, 10000);
@@ -107,60 +116,12 @@ function DogCakeApp() {
     }
   };
 
-  const stopChatCollection = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dogcake-collection/stop`,
-        {
-          method: "POST",
-        }
-      );
-      const data = await response.json();
-
-      if (data.success) {
-        setIsCollecting(false);
-        alert("독케익 채팅 수집을 중지했습니다!");
-      } else {
-        alert("채팅 수집 중지에 실패했습니다: " + data.message);
-      }
-    } catch (error) {
-      console.error("Error stopping chat collection:", error);
-      alert("채팅 수집 중지 중 오류가 발생했습니다");
-    }
-  };
-
-  const checkCollectionStatus = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/chat-collection/status`
-      );
-      const data = await response.json();
-      // 기존 Java 수집기 상태는 참고용으로만 사용
-      setChatCollectionStatus(data.status);
-    } catch (error) {
-      console.error("Error checking collection status:", error);
-    }
-  };
-
-  const checkNodejsCollectionStatus = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dogcake-collection/status`
-      );
-      const data = await response.json();
-      // 독케익 수집 상태 확인
-      setIsCollecting(data.isCollecting);
-    } catch (error) {
-      console.error("독케익 수집 상태 확인 실패:", error);
-    }
-  };
-
-  const fetchChatStats = async () => {
+  const fetchChatStats = useCallback(async () => {
     // 첫 번째 로딩시에만 로딩 상태 표시
     if (!stats || stats.length === 0) {
       setLoading(true);
     }
-    
+
     try {
       const url =
         timeRange > 0
@@ -178,7 +139,7 @@ function DogCakeApp() {
         setLoading(false);
       }
     }
-  };
+  }, [timeRange]);
 
   // 게임 구간 추가
   const addGameSegment = () => {
@@ -250,7 +211,11 @@ function DogCakeApp() {
         className="dogcake-character-right"
       />
 
-      <div className={`dogcake-app ${showChatDogSettings ? 'panel-open' : ''} ${showChatDogSettings && chatDogRatio !== null ? 'panel-expanded' : ''}`}>
+      <div
+        className={`dogcake-app ${showChatDogSettings ? "panel-open" : ""} ${
+          showChatDogSettings && chatDogRatio !== null ? "panel-expanded" : ""
+        }`}
+      >
         <h1 style={{ gap: "18px" }}>
           <img
             src={dogcakeImage1}
@@ -314,7 +279,11 @@ function DogCakeApp() {
         {showChatDogSettings && (
           <div className="dogcake-chatdog-settings-panel">
             <h3>
-              <img src={dogcakePunch} alt="독케익 펀치" className="dogcake-punch-icon" />
+              <img
+                src={dogcakePunch}
+                alt="독케익 펀치"
+                className="dogcake-punch-icon"
+              />
               오늘의 <span className="chatdog-highlight">저챗견</span> 비율
             </h3>
             <p>저챗에서 게임으로 바뀔 때 사라진 개떡이들의 비율을 계산합니다</p>
@@ -463,9 +432,7 @@ function DogCakeApp() {
                     #{stat.rank}
                   </div>
                   <div className="dogcake-user-info">
-                    <div className="dogcake-display-name">
-                      {stat.username}
-                    </div>
+                    <div className="dogcake-display-name">{stat.username}</div>
                   </div>
                   <div className="dogcake-message-count">
                     {stat.messageCount}개

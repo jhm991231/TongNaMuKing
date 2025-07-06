@@ -19,9 +19,6 @@ public class Channel {
     @Column(unique = true, nullable = false)
     private String channelName;
     
-    @Column(nullable = false)
-    private String displayName;
-    
     private String description;
     
     // 실시간 라이브 추적 필드들
