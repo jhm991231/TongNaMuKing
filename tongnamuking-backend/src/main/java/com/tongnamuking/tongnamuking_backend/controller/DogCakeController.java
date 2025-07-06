@@ -93,14 +93,14 @@ public class DogCakeController {
             System.out.println("독케익 채팅 수신 - 채널: " + channelName + 
                              ", 사용자: " + request.getUsername() + 
                              ", 메시지: " + request.getMessage() +
-                             ", 세션: " + request.getSessionId());
+                             ", 클라이언트: " + request.getClientId());
             
             // 독케익 채팅을 데이터베이스에 저장 (영구 보관)
             chatService.addChatMessage(
                 request.getUsername(),
                 channelName,
                 request.getMessage(),
-                request.getSessionId()
+                request.getClientId()
             );
             
             System.out.println("✅ 독케익 채팅 데이터베이스에 저장 완료");

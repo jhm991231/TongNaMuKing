@@ -25,16 +25,16 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     List<Object[]> findChatStatsByChannelAndTimeRange(@Param("channelId") Long channelId, @Param("startTime") LocalDateTime startTime);
     
     @Query("SELECT cm.user.id, cm.user.username, COUNT(cm.id) as messageCount " +
-           "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.sessionId = :sessionId " +
+           "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.clientId = :clientId " +
            "GROUP BY cm.user.id, cm.user.username " +
            "ORDER BY COUNT(cm.id) DESC")
-    List<Object[]> findChatStatsByChannelAndSession(@Param("channelId") Long channelId, @Param("sessionId") String sessionId);
+    List<Object[]> findChatStatsByChannelAndClient(@Param("channelId") Long channelId, @Param("clientId") String clientId);
     
     @Query("SELECT cm.user.id, cm.user.username, COUNT(cm.id) as messageCount " +
-           "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.sessionId = :sessionId AND cm.timestamp >= :startTime " +
+           "FROM ChatMessage cm WHERE cm.channel.id = :channelId AND cm.clientId = :clientId AND cm.timestamp >= :startTime " +
            "GROUP BY cm.user.id, cm.user.username " +
            "ORDER BY COUNT(cm.id) DESC")
-    List<Object[]> findChatStatsByChannelSessionAndTimeRange(@Param("channelId") Long channelId, @Param("sessionId") String sessionId, @Param("startTime") LocalDateTime startTime);
+    List<Object[]> findChatStatsByChannelClientAndTimeRange(@Param("channelId") Long channelId, @Param("clientId") String clientId, @Param("startTime") LocalDateTime startTime);
     
     // 저챗견 비율 계산을 위한 쿼리들
     @Query("SELECT DISTINCT cm.user.id " +
@@ -62,5 +62,5 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
                                                 @Param("startTime") LocalDateTime startTime);
     
     // 세션별 채팅 메시지 삭제
-    void deleteBySessionId(String sessionId);
+    void deleteByClientId(String clientId);
 }

@@ -28,7 +28,6 @@ public class CategoryService {
             // 채널이 없으면 새로 생성
             channel = new Channel();
             channel.setChannelName(request.getChannelName());
-            channel.setDisplayName(request.getChannelName());
             channel = channelRepository.save(channel);
         } else {
             channel = channelOpt.get();

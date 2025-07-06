@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import "./App.css";
 
@@ -37,8 +38,6 @@ function App() {
   const [timeRange, setTimeRange] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [chatCollectionStatus, setChatCollectionStatus] = useState(null);
-  const [isCollecting, setIsCollecting] = useState(false);
   const [activeCollectors, setActiveCollectors] = useState(new Set());
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [maxCollectors, setMaxCollectors] = useState(3);
@@ -48,7 +47,6 @@ function App() {
   const [pingInterval, setPingInterval] = useState(null);
 
   useEffect(() => {
-    checkCollectionStatus();
     loadActiveCollectors();
 
     // 핑 시작
@@ -152,69 +150,6 @@ function App() {
 
     // 즉시 새로운 데이터 로드 (채널명 직접 전달)
     await fetchChatStats(channel.channelName);
-  };
-
-  const startChatCollection = async (channelId) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/chat-collection/start/${channelId}`,
-        {
-          method: "POST",
-          headers: getApiHeaders(),
-        }
-      );
-      const data = await response.json();
-
-      if (data.success) {
-        setIsCollecting(true);
-        setChatCollectionStatus(data.status);
-        alert("채팅 수집을 시작했습니다!");
-        // 수집 시작 후 바로 순위 로드
-        setTimeout(() => fetchChatStats(), 1000);
-      } else {
-        alert("채팅 수집 시작에 실패했습니다: " + data.message);
-      }
-    } catch (error) {
-      console.error("Error starting chat collection:", error);
-      alert("채팅 수집 시작 중 오류가 발생했습니다");
-    }
-  };
-
-  const stopChatCollection = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/chat-collection/stop`, {
-        method: "POST",
-        headers: getApiHeaders(),
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setIsCollecting(false);
-        setChatCollectionStatus(data.status);
-        alert("채팅 수집을 중지했습니다!");
-      } else {
-        alert("채팅 수집 중지에 실패했습니다: " + data.message);
-      }
-    } catch (error) {
-      console.error("Error stopping chat collection:", error);
-      alert("채팅 수집 중지 중 오류가 발생했습니다");
-    }
-  };
-
-  const checkCollectionStatus = async () => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/chat-collection/status`,
-        {
-          headers: getApiHeaders(),
-        }
-      );
-      const data = await response.json();
-      setIsCollecting(data.isCollecting);
-      setChatCollectionStatus(data.status);
-    } catch (error) {
-      console.error("Error checking collection status:", error);
-    }
   };
 
   const loadActiveCollectors = async () => {
@@ -361,8 +296,8 @@ function App() {
     try {
       const url =
         timeRange > 0
-          ? `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}?hours=${timeRange}`
-          : `${API_BASE_URL}/api/chat-stats/session/channel/${nameToUse}`;
+          ? `${API_BASE_URL}/api/chat-stats/client/channel/${nameToUse}?hours=${timeRange}`
+          : `${API_BASE_URL}/api/chat-stats/client/channel/${nameToUse}`;
 
       // 10초 타임아웃 설정
       const controller = new AbortController();

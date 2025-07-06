@@ -13,10 +13,6 @@ public class TongnamukingBackendApplication implements CommandLineRunner {
 
 	@Autowired
 	private DogCakeCollectionService dogCakeCollectionService;
-	
-	// 독케익 채널 ID
-	private static final String DOGCAKE_CHANNEL_ID = "b68af124ae2f1743a1dcbf5e2ab41e0b";
-
 	public static void main(String[] args) {
 		SpringApplication.run(TongnamukingBackendApplication.class, args);
 	}

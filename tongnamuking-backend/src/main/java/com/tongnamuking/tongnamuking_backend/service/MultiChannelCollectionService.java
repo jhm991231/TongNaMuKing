@@ -17,35 +17,35 @@ import java.util.HashSet;
 @Slf4j
 public class MultiChannelCollectionService {
     
-    // 세션별 수집기 관리: sessionId -> (channelId -> Process)
+    // 클라이언트별 수집기 관리: sessionId -> (channelId -> Process)
     private final Map<String, Map<String, Process>> userCollections = new ConcurrentHashMap<>();
     
-    // 세션별 마지막 활동 시간 (핑 기반)
-    private final Map<String, Long> sessionLastActivity = new ConcurrentHashMap<>();
+    // 클라이언트별 마지막 활동 시간 (핑 기반)
+    private final Map<String, Long> clientLastActivity = new ConcurrentHashMap<>();
     
     private final int MAX_COLLECTORS_PER_USER = 3;
     
-    public boolean startCollection(String sessionId, String channelId) {
+                                       public boolean startCollection(String clientId, String channelId) {
         
         // 사용자별 수집기 맵 가져오기 또는 생성
-        Map<String, Process> userChannels = userCollections.computeIfAbsent(sessionId, k -> new ConcurrentHashMap<>());
+        Map<String, Process> userChannels = userCollections.computeIfAbsent(clientId, k -> new ConcurrentHashMap<>());
         
         // 이미 해당 사용자가 해당 채널을 수집 중인지 확인
         if (userChannels.containsKey(channelId)) {
-            log.warn("세션 {}에서 이미 수집 중인 채널입니다: {}", sessionId, channelId);
+            log.warn("클라이언트 {}에서 이미 수집 중인 채널입니다: {}", clientId, channelId);
             return false;
         }
         
         // 사용자별 최대 수집기 수 확인
         if (userChannels.size() >= MAX_COLLECTORS_PER_USER) {
-            log.warn("세션 {}의 최대 수집기 수({})에 도달했습니다. 현재 수집 중인 채널: {}", 
-                    sessionId, MAX_COLLECTORS_PER_USER, userChannels.keySet());
+            log.warn("클라이언트 {}의 최대 수집기 수({})에 도달했습니다. 현재 수집 중인 채널: {}", 
+                    clientId, MAX_COLLECTORS_PER_USER, userChannels.keySet());
             return false;
         }
         
         try {
-            log.info("멀티채널 수집 시작: {} (세션: {}, 현재 활성 수집기: {})", 
-                    channelId, sessionId, userChannels.size());
+            log.info("멀티채널 수집 시작: {} (클라이언트: {}, 현재 활성 수집기: {})", 
+                    channelId, clientId, userChannels.size());
             
             // Node.js 채팅 수집기 실행
             ProcessBuilder processBuilder = new ProcessBuilder();
@@ -60,7 +60,7 @@ public class MultiChannelCollectionService {
                 "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing" : 
                 "/app";
             
-            processBuilder.command(nodeCommand, scriptPath, channelId, sessionId);
+            processBuilder.command(nodeCommand, scriptPath, channelId, clientId);
             processBuilder.directory(new java.io.File(workingDir));
             processBuilder.redirectErrorStream(true);
             
@@ -68,7 +68,7 @@ public class MultiChannelCollectionService {
             userChannels.put(channelId, process);
             
             // 세션 활동 시간 초기화
-            sessionLastActivity.put(sessionId, System.currentTimeMillis());
+            clientLastActivity.put(clientId, System.currentTimeMillis());
             
             // 비동기로 프로세스 출력 로깅
             CompletableFuture.runAsync(() -> {
@@ -105,16 +105,16 @@ public class MultiChannelCollectionService {
         }
     }
     
-    public boolean stopCollection(String sessionId, String channelId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public boolean stopCollection(String clientId, String channelId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         if (userChannels == null) {
-            log.warn("세션 {}에 수집기가 없습니다.", sessionId);
+            log.warn("클라이언트 {}에 수집기가 없습니다.", clientId);
             return false;
         }
         
         Process process = userChannels.get(channelId);
         if (process == null) {
-            log.warn("세션 {}에서 채널 {}은 수집 중이 아닙니다.", sessionId, channelId);
+            log.warn("클라이언트 {}에서 채널 {}은 수집 중이 아닙니다.", clientId, channelId);
             return false;
         }
         
@@ -135,7 +135,7 @@ public class MultiChannelCollectionService {
                     log.warn("채널 {} 프로세스 종료 타임아웃 (5초)", channelId);
                 }
                 
-                log.info("멀티채널 {} 수집 중지됨 (세션: {})", channelId, sessionId);
+                log.info("멀티채널 {} 수집 중지됨 (클라이언트: {})", channelId, clientId);
             }
             
             userChannels.remove(channelId);
@@ -148,38 +148,38 @@ public class MultiChannelCollectionService {
         }
     }
     
-    public boolean stopAllCollections(String sessionId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public boolean stopAllCollections(String clientId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         if (userChannels == null || userChannels.isEmpty()) {
             return true;
         }
         
         boolean allStopped = true;
         for (String channelId : Set.copyOf(userChannels.keySet())) {
-            if (!stopCollection(sessionId, channelId)) {
+            if (!stopCollection(clientId, channelId)) {
                 allStopped = false;
             }
         }
         return allStopped;
     }
     
-    public boolean isCollecting(String sessionId, String channelId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public boolean isCollecting(String clientId, String channelId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         return userChannels != null && userChannels.containsKey(channelId);
     }
     
-    public boolean isAnyCollecting(String sessionId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public boolean isAnyCollecting(String clientId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         return userChannels != null && !userChannels.isEmpty();
     }
     
-    public Set<String> getActiveChannels(String sessionId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public Set<String> getActiveChannels(String clientId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         return userChannels != null ? Set.copyOf(userChannels.keySet()) : new HashSet<>();
     }
     
-    public int getActiveCollectorCount(String sessionId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public int getActiveCollectorCount(String clientId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         return userChannels != null ? userChannels.size() : 0;
     }
     
@@ -187,8 +187,8 @@ public class MultiChannelCollectionService {
         return MAX_COLLECTORS_PER_USER;
     }
     
-    public String getStatus(String sessionId) {
-        Map<String, Process> userChannels = userCollections.get(sessionId);
+    public String getStatus(String clientId) {
+        Map<String, Process> userChannels = userCollections.get(clientId);
         if (userChannels == null || userChannels.isEmpty()) {
             return "수집 중인 채널 없음";
         } else {
@@ -200,10 +200,10 @@ public class MultiChannelCollectionService {
     /**
      * 세션 활동 시간 업데이트 (핑 수신시 호출)
      */
-    public void updateSessionActivity(String sessionId) {
-        if (userCollections.containsKey(sessionId)) {
-            sessionLastActivity.put(sessionId, System.currentTimeMillis());
-            log.debug("세션 활동 업데이트: {}", sessionId);
+    public void updateClientActivity(String clientId) {
+        if (userCollections.containsKey(clientId)) {
+            clientLastActivity.put(clientId, System.currentTimeMillis());
+            log.debug("클라이언트 활동 업데이트: {}", clientId);
         }
     }
     
@@ -211,22 +211,22 @@ public class MultiChannelCollectionService {
      * 30초마다 비활성 세션의 chat-collector 정리
      */
     @Scheduled(fixedRate = 30000)
-    public void cleanupInactiveSessions() {
+    public void cleanupInactiveCilents() {
         long currentTime = System.currentTimeMillis();
         long inactiveThreshold = 2 * 60 * 1000; // 2분
         
-        sessionLastActivity.entrySet().removeIf(entry -> {
-            String sessionId = entry.getKey();
+        clientLastActivity.entrySet().removeIf(entry -> {
+            String clientId = entry.getKey();
             long lastActivity = entry.getValue();
             
             if (currentTime - lastActivity > inactiveThreshold) {
-                log.info("비활성 세션 정리: {} ({}분 비활성)", sessionId, (currentTime - lastActivity) / 60000);
+                log.info("비활성 클라이언트 정리: {} ({}분 비활성)", clientId, (currentTime - lastActivity) / 60000);
                 
-                // 해당 세션의 모든 chat-collector 종료
-                stopAllCollections(sessionId);
+                // 해당 클라이언트의 모든 chat-collector 종료
+                stopAllCollections(clientId);
                 
-                // 세션 데이터 정리
-                userCollections.remove(sessionId);
+                // 클라이언트 데이터 정리
+                userCollections.remove(clientId);
                 
                 return true; // Map에서 제거
             }

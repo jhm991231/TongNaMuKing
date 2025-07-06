@@ -39,8 +39,8 @@ public class DogCakeCollectionService {
                 "/app";
             
             // 독케익 전용 세션 ID 생성
-            String sessionId = "DOGCAKE_SESSION";
-            processBuilder.command(nodeCommand, scriptPath, DOGCAKE_CHANNEL_ID, sessionId);
+            String clientId = "DOGCAKE_SESSION";
+            processBuilder.command(nodeCommand, scriptPath, DOGCAKE_CHANNEL_ID, clientId);
             processBuilder.directory(new java.io.File(workingDir));
             processBuilder.redirectErrorStream(true);
             

@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.HashSet;
 import com.tongnamuking.tongnamuking_backend.entity.ChatMessage;
 import com.tongnamuking.tongnamuking_backend.entity.User;
-import com.tongnamuking.tongnamuking_backend.repository.ChatMessageRepository;
 import com.tongnamuking.tongnamuking_backend.repository.UserRepository;
 
 @Service
@@ -58,17 +57,17 @@ public class ChatStatsService {
         return convertToResponseList(results);
     }
     
-    public List<ChatStatsResponse> getChatStatsByChannelAndSession(String channelName, String sessionId) {
+    public List<ChatStatsResponse> getChatStatsByChannelAndClient(String channelName, String clientId) {
         Optional<Channel> channel = channelRepository.findByChannelName(channelName);
         if (channel.isEmpty()) {
             return new ArrayList<>();
         }
         
-        List<Object[]> results = chatMessageRepository.findChatStatsByChannelAndSession(channel.get().getId(), sessionId);
+        List<Object[]> results = chatMessageRepository.findChatStatsByChannelAndClient(channel.get().getId(), clientId);
         return convertToResponseList(results);
     }
     
-    public List<ChatStatsResponse> getChatStatsByChannelSessionAndTimeRange(String channelName, String sessionId, double hours) {
+    public List<ChatStatsResponse> getChatStatsByChannelClientAndTimeRange(String channelName, String clientId, double hours) {
         Optional<Channel> channel = channelRepository.findByChannelName(channelName);
         if (channel.isEmpty()) {
             return new ArrayList<>();
@@ -77,18 +76,18 @@ public class ChatStatsService {
         // hours를 분으로 변환하여 더 정확한 시간 계산
         long minutes = Math.round(hours * 60);
         LocalDateTime startTime = LocalDateTime.now().minusMinutes(minutes);
-        List<Object[]> results = chatMessageRepository.findChatStatsByChannelSessionAndTimeRange(
-            channel.get().getId(), sessionId, startTime);
+        List<Object[]> results = chatMessageRepository.findChatStatsByChannelClientAndTimeRange(
+            channel.get().getId(), clientId, startTime);
         return convertToResponseList(results);
     }
     
     @Transactional
-    public void deleteSessionData(String sessionId) {
+    public void deleteClientData(String clientId) {
         try {
-            chatMessageRepository.deleteBySessionId(sessionId);
-            log.info("세션 {} 의 모든 채팅 데이터가 삭제되었습니다", sessionId);
+            chatMessageRepository.deleteByClientId(clientId);
+            log.info("클라이언트 {} 의 모든 채팅 데이터가 삭제되었습니다", clientId);
         } catch (Exception e) {
-            log.error("세션 {} 의 채팅 데이터 삭제 중 오류 발생", sessionId, e);
+            log.error("클라이언트 {} 의 채팅 데이터 삭제 중 오류 발생", clientId, e);
             throw e;
         }
     }
@@ -440,7 +439,6 @@ public class ChatStatsService {
             // 채널이 없으면 자동 생성
             channel = new Channel();
             channel.setChannelName(channelName);
-            channel.setDisplayName(channelName);
             
             // 독케익 채널인 경우 Chzzk 채널 ID 설정
             if ("독케익".equals(channelName)) {
