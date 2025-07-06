@@ -55,9 +55,8 @@ public class ChatController {
         // 클라이언트 활동 시간 업데이트
         memoryChatDataService.updateClientActivity(request);
         
-        // 기존 세션 기반 활동도 유지 (MultiChannelCollectionService가 세션 기반이므로)
         String clientId = clientIdentifierService.resolveClientId(request);
-        multiChannelCollectionService.updateSessionActivity(clientId);
+        multiChannelCollectionService.updateClientActivity(clientId);
         
         return ResponseEntity.ok(Map.of(
             "status", "alive",

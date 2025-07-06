@@ -17,15 +17,15 @@ import java.util.HashSet;
 @Slf4j
 public class MultiChannelCollectionService {
     
-    // 세션별 수집기 관리: sessionId -> (channelId -> Process)
+    // 클라이언트별 수집기 관리: sessionId -> (channelId -> Process)
     private final Map<String, Map<String, Process>> userCollections = new ConcurrentHashMap<>();
     
-    // 세션별 마지막 활동 시간 (핑 기반)
-    private final Map<String, Long> sessionLastActivity = new ConcurrentHashMap<>();
+    // 클라이언트별 마지막 활동 시간 (핑 기반)
+    private final Map<String, Long> clientLastActivity = new ConcurrentHashMap<>();
     
     private final int MAX_COLLECTORS_PER_USER = 3;
     
-    public boolean startCollection(String clientId, String channelId) {
+                                       public boolean startCollection(String clientId, String channelId) {
         
         // 사용자별 수집기 맵 가져오기 또는 생성
         Map<String, Process> userChannels = userCollections.computeIfAbsent(clientId, k -> new ConcurrentHashMap<>());
@@ -68,7 +68,7 @@ public class MultiChannelCollectionService {
             userChannels.put(channelId, process);
             
             // 세션 활동 시간 초기화
-            sessionLastActivity.put(clientId, System.currentTimeMillis());
+            clientLastActivity.put(clientId, System.currentTimeMillis());
             
             // 비동기로 프로세스 출력 로깅
             CompletableFuture.runAsync(() -> {
@@ -200,9 +200,9 @@ public class MultiChannelCollectionService {
     /**
      * 세션 활동 시간 업데이트 (핑 수신시 호출)
      */
-    public void updateSessionActivity(String clientId) {
+    public void updateClientActivity(String clientId) {
         if (userCollections.containsKey(clientId)) {
-            sessionLastActivity.put(clientId, System.currentTimeMillis());
+            clientLastActivity.put(clientId, System.currentTimeMillis());
             log.debug("클라이언트 활동 업데이트: {}", clientId);
         }
     }
@@ -211,21 +211,21 @@ public class MultiChannelCollectionService {
      * 30초마다 비활성 세션의 chat-collector 정리
      */
     @Scheduled(fixedRate = 30000)
-    public void cleanupInactiveSessions() {
+    public void cleanupInactiveCilents() {
         long currentTime = System.currentTimeMillis();
         long inactiveThreshold = 2 * 60 * 1000; // 2분
         
-        sessionLastActivity.entrySet().removeIf(entry -> {
+        clientLastActivity.entrySet().removeIf(entry -> {
             String clientId = entry.getKey();
             long lastActivity = entry.getValue();
             
             if (currentTime - lastActivity > inactiveThreshold) {
                 log.info("비활성 클라이언트 정리: {} ({}분 비활성)", clientId, (currentTime - lastActivity) / 60000);
                 
-                // 해당 세션의 모든 chat-collector 종료
+                // 해당 클라이언트의 모든 chat-collector 종료
                 stopAllCollections(clientId);
                 
-                // 세션 데이터 정리
+                // 클라이언트 데이터 정리
                 userCollections.remove(clientId);
                 
                 return true; // Map에서 제거

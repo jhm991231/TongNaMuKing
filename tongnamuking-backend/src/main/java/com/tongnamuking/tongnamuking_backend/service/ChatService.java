@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.time.LocalDateTime;
 
 @Service
@@ -22,7 +21,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     
     @Transactional
-    public void addChatMessage(String username, String channelName, String message, String sessionId) {
+    public void addChatMessage(String username, String channelName, String message, String clientId) {
         
         User user = userRepository.findByUsername(username)
             .orElseGet(() -> {
@@ -36,7 +35,6 @@ public class ChatService {
             .orElseGet(() -> {
                 Channel newChannel = new Channel();
                 newChannel.setChannelName(channelName);
-                newChannel.setDisplayName(channelName);
                 
                 // 독케익 채널인 경우 Chzzk 채널 ID 설정
                 if ("독케익".equals(channelName)) {
@@ -50,7 +48,7 @@ public class ChatService {
         chatMessage.setUser(user);
         chatMessage.setChannel(channel);
         chatMessage.setMessage(message);
-        chatMessage.setSessionId(sessionId);
+        chatMessage.setClientId(clientId);
         chatMessage.setTimestamp(LocalDateTime.now());
         chatMessageRepository.save(chatMessage);
         

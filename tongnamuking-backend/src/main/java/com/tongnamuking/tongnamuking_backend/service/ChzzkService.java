@@ -1,7 +1,6 @@
 package com.tongnamuking.tongnamuking_backend.service;
 
 import com.tongnamuking.tongnamuking_backend.dto.ChzzkChannelResponse;
-import com.tongnamuking.tongnamuking_backend.dto.ChzzkLiveResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ChzzkChannelInfoResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
