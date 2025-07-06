@@ -27,7 +27,7 @@ public class ChzzkService {
     
     public List<ChzzkChannelResponse.ChzzkChannel> searchChannels(String keyword) {
         try {
-            String url = UriComponentsBuilder.fromHttpUrl(CHZZK_API_BASE_URL + "/search/channels")
+            String url = UriComponentsBuilder.fromUriString(CHZZK_API_BASE_URL + "/search/channels")
                     .queryParam("keyword", keyword)
                     .queryParam("offset", 0)
                     .queryParam("size", 10)

@@ -109,28 +109,6 @@ public class ChatStatsController {
         return ResponseEntity.ok(ratio);
     }
     
-    @GetMapping("/chatdog-ratio/{channelName}/mock")
-    public ResponseEntity<ChatDogRatioResponse> getMockChatDogRatio(
-            @PathVariable String channelName,
-            @RequestParam(defaultValue = "low") String scenario) {
-        
-        ChatDogRatioResponse mockRatio = chatStatsService.generateMockChatDogRatio(scenario);
-        return ResponseEntity.ok(mockRatio);
-    }
-    
-    @PostMapping("/insert-mock-data/{channelName}")
-    public ResponseEntity<String> insertMockData(
-            @PathVariable String channelName,
-            @RequestParam(defaultValue = "medium") String scenario) {
-        
-        try {
-            chatStatsService.insertMockDataToDatabase(channelName, scenario);
-            return ResponseEntity.ok("목데이터가 데이터베이스에 성공적으로 삽입되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("목데이터 삽입 실패: " + e.getMessage());
-        }
-    }
-    
     @GetMapping("/debug/{channelName}")
     public ResponseEntity<Object> getDebugInfo(@PathVariable String channelName) {
         return ResponseEntity.ok(chatStatsService.getDebugInfo(channelName));
