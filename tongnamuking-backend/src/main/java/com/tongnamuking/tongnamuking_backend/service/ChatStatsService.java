@@ -185,7 +185,6 @@ public class ChatStatsService {
         // 게임 구간들을 시작 시간 순으로 정렬
         gameSegments.sort((a, b) -> Integer.compare(a.getStartMinute(), b.getStartMinute()));
 
-        LocalDateTime now = LocalDateTime.now();
         int totalJustChatUsers = 0;
         int totalDisappearedUsers = 0;
         int totalGameUsers = 0;
