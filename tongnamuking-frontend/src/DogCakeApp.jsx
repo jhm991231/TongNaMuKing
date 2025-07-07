@@ -20,7 +20,6 @@ function DogCakeApp() {
 
   // 저챗견 비율 관련 상태
   const [showChatDogSettings, setShowChatDogSettings] = useState(false);
-  const [justChatDuration, setJustChatDuration] = useState(120); // 저챗 시간 (분)
   const [useManualTime, setUseManualTime] = useState(false); // 수동 시간 설정 여부
   const [gameSegments, setGameSegments] = useState([
     { id: 1, startMinute: 120, endMinute: 180 }, // 기본 게임 구간
@@ -173,7 +172,7 @@ function DogCakeApp() {
     try {
       const url = useManualTime
         ? `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}/manual`
-        : `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}?justChatDuration=${justChatDuration}&useManualTime=${useManualTime}`;
+        : `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}?useManualTime=${useManualTime}`;
 
       const requestOptions = useManualTime
         ? {
