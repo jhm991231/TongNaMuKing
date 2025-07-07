@@ -172,7 +172,7 @@ function DogCakeApp() {
     try {
       const url = useManualTime
         ? `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}/manual`
-        : `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}?useManualTime=${useManualTime}`;
+        : `${API_BASE_URL}/api/chat-stats/chatdog-ratio/${DOGCAKE_CHANNEL.channelName}/auto`;
 
       const requestOptions = useManualTime
         ? {

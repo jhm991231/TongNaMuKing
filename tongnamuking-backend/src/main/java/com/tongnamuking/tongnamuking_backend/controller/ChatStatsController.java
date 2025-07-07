@@ -90,13 +90,11 @@ public class ChatStatsController {
         return ResponseEntity.ok(stats.subList(0, Math.min(limit, stats.size())));
     }
     
-    @GetMapping("/chatdog-ratio/{channelName}")
-    public ResponseEntity<ChatDogRatioResponse> getChatDogRatio(
-            @PathVariable String channelName,
-            @RequestParam(defaultValue = "120") int justChatDuration,
-            @RequestParam(defaultValue = "false") boolean useManualTime) {
+    @GetMapping("/chatdog-ratio/{channelName}/auto")
+    public ResponseEntity<ChatDogRatioResponse> getChatDogRatioAuto(
+            @PathVariable String channelName) {
         
-        ChatDogRatioResponse ratio = chatStatsService.calculateChatDogRatio(channelName, justChatDuration, useManualTime);
+        ChatDogRatioResponse ratio = chatStatsService.calculateChatDogRatioAuto(channelName);
         return ResponseEntity.ok(ratio);
     }
     
