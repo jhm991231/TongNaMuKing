@@ -8,7 +8,7 @@ cd /app/chat-collector && npm install
 
 # Start backend
 cd /app
-java -jar backend.jar &
+java -Xmx256m -Xms128m -XX:+HeapDumpOnOutOfMemoryError -jar backend.jar &
 
 # Wait for any process to exit
 wait -n
