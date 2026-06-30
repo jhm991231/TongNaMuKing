@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # MySQL Database
@@ -13,14 +13,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
       - tongnamuking-network
     restart: unless-stopped
 
   # Spring Boot Backend
   backend:
-    build: 
+    build:
       context: ./tongnamuking-backend
       dockerfile: Dockerfile
     container_name: tongnamuking-backend
@@ -55,6 +55,8 @@ services:
       context: ./tongnamuking-frontend
       dockerfile: Dockerfile
     container_name: tongnamuking-frontend
+    depends_on:
+      - backend
     ports:
       - "5173:80"
     networks:
