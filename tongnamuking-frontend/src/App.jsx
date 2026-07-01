@@ -243,7 +243,7 @@ function App() {
   // 핑 관련 함수들
   const sendPing = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/chat/ping`, {
+      const response = await fetch(`${API_BASE_URL}/api/multi-channel-collection/ping`, {
         method: "GET",
         headers: getApiHeaders(),
       });
