@@ -93,22 +93,6 @@ public class MultiChannelController {
                                 "activeCount", multiChannelCollectionService.getActiveCollectorCount(clientId)));
         }
 
-        @PostMapping("/stop-all")
-        @Operation(summary = "모든 채널 수집 중지", description = "현재 수집 중인 모든 채널의 채팅 수집을 중지합니다.")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "요청 성공 (단, 일부 수집 중지에 실패할 수 있음)"),
-                        @ApiResponse(responseCode = "500", description = "서버 오류")
-        })
-        public ResponseEntity<Map<String, Object>> stopAllCollections(HttpServletRequest request) {
-                String clientId = clientIdentifierService.resolveClientId(request);
-                boolean success = multiChannelCollectionService.stopAllCollections(clientId);
-
-                return ResponseEntity.ok(Map.of(
-                                "success", success,
-                                "message", success ? "모든 멀티채널 수집이 중지되었습니다" : "일부 수집 중지에 실패했습니다",
-                                "status", multiChannelCollectionService.getStatus(clientId)));
-        }
-
         @GetMapping("/status")
         @Operation(summary = "전체 수집 상태 조회", description = "전체 채널 수집 상태와 활성 채널 목록을 조회합니다.")
         @ApiResponses(value = {
@@ -126,21 +110,6 @@ public class MultiChannelController {
                                 "activeCount", multiChannelCollectionService.getActiveCollectorCount(clientId),
                                 "maxCount", multiChannelCollectionService.getMaxCollectors(),
                                 "status", multiChannelCollectionService.getStatus(clientId)));
-        }
-
-        @GetMapping("/status/{channelId}")
-        @Operation(summary = "채널별 수집 상태 조회", description = "지정된 채널의 수집 상태를 조회합니다.")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "상태 조회 성공"),
-                        @ApiResponse(responseCode = "500", description = "서버 오류")
-        })
-        public ResponseEntity<Map<String, Object>> getChannelStatus(
-                        @Parameter(description = "조회할 채널 ID", required = true) @PathVariable String channelId,
-                        HttpServletRequest request) {
-                String clientId = clientIdentifierService.resolveClientId(request);
-                return ResponseEntity.ok(Map.of(
-                                "channelId", channelId,
-                                "isCollecting", multiChannelCollectionService.isCollecting(clientId, channelId)));
         }
 
         // chat-collector가 호출하는 API

@@ -80,22 +80,6 @@ public class ChatStatsController {
         return ResponseEntity.ok(stats);
     }
 
-    @GetMapping("/channel/{channelName}/top/{limit}")
-    public ResponseEntity<List<ChatStatsResponse>> getTopChatters(
-            @PathVariable String channelName,
-            @PathVariable int limit,
-            @RequestParam(defaultValue = "0") int hours) {
-
-        List<ChatStatsResponse> stats;
-        if (hours > 0) {
-            stats = chatStatsService.getChatStatsByChannelAndTimeRange(channelName, hours);
-        } else {
-            stats = chatStatsService.getChatStatsByChannel(channelName);
-        }
-
-        return ResponseEntity.ok(stats.subList(0, Math.min(limit, stats.size())));
-    }
-
     @GetMapping("/chatdog-ratio/{channelName}/auto")
     public ResponseEntity<ChatDogRatioResponse> getChatDogRatioAuto(
             @PathVariable String channelName) {
@@ -114,18 +98,4 @@ public class ChatStatsController {
         return ResponseEntity.ok(ratio);
     }
 
-    @GetMapping("/debug/{channelName}")
-    public ResponseEntity<Object> getDebugInfo(@PathVariable String channelName) {
-        return ResponseEntity.ok(chatStatsService.getDebugInfo(channelName));
-    }
-
-    @DeleteMapping("/clear-all-data")
-    public ResponseEntity<String> clearAllData() {
-        try {
-            chatStatsService.clearAllData();
-            return ResponseEntity.ok("모든 데이터가 삭제되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("데이터 삭제 실패: " + e.getMessage());
-        }
-    }
 }
