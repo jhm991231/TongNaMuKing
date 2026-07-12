@@ -6,6 +6,7 @@ import com.tongnamuking.tongnamuking_backend.entity.Channel;
 import com.tongnamuking.tongnamuking_backend.repository.CategoryChangeEventRepository;
 import com.tongnamuking.tongnamuking_backend.repository.ChannelRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryService {
     
     private final CategoryChangeEventRepository categoryChangeEventRepository;
@@ -63,9 +65,8 @@ public class CategoryService {
         
         categoryChangeEventRepository.save(event);
         
-        System.out.println("카테고리 변경 이벤트 저장됨: " + 
-            (request.getPreviousCategory() != null ? request.getPreviousCategory().getLiveCategoryValue() : "null") + 
-            " → " + 
-            (request.getNewCategory() != null ? request.getNewCategory().getLiveCategoryValue() : "null"));
+        log.info("카테고리 변경 이벤트 저장됨: {} → {}",
+                request.getPreviousCategory() != null ? request.getPreviousCategory().getLiveCategoryValue() : "null",
+                request.getNewCategory() != null ? request.getNewCategory().getLiveCategoryValue() : "null");
     }
 }

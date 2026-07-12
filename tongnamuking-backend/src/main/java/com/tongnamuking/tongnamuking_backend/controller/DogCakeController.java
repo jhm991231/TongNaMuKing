@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/dogcake-collection")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "독케익 전용 수집", description = "독케익 채널 전용 채팅 수집 관리 API")
 public class DogCakeController {
 
@@ -83,10 +85,8 @@ public class DogCakeController {
         try {
             String channelName = request.getChannelName() != null ? request.getChannelName() : request.getChannelId();
 
-            System.out.println("독케익 채팅 수신 - 채널: " + channelName +
-                    ", 사용자: " + request.getUsername() +
-                    ", 메시지: " + request.getMessage() +
-                    ", 클라이언트: " + request.getClientId());
+            log.info("독케익 채팅 수신 - 채널: {}, 사용자: {}, 메시지: {}, 클라이언트: {}",
+                    channelName, request.getUsername(), request.getMessage(), request.getClientId());
 
             // 독케익 채팅을 데이터베이스에 저장 (영구 보관)
             chatService.addChatMessage(
@@ -95,12 +95,11 @@ public class DogCakeController {
                     request.getMessage(),
                     request.getClientId());
 
-            System.out.println("✅ 독케익 채팅 데이터베이스에 저장 완료");
+            log.debug("독케익 채팅 데이터베이스에 저장 완료");
             return ResponseEntity.ok("DogCake chat message stored in database");
 
         } catch (Exception e) {
-            System.err.println("❌ 독케익 채팅 메시지 저장 실패: " + e.getMessage());
-            e.printStackTrace();
+            log.error("독케익 채팅 메시지 저장 실패", e);
             return ResponseEntity.internalServerError().body("Failed to store DogCake chat message");
         }
     }
