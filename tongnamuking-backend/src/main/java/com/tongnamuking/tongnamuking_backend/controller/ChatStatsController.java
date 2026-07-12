@@ -4,6 +4,8 @@ import com.tongnamuking.tongnamuking_backend.dto.ChatStatsResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ChatDogRatioResponse;
 import com.tongnamuking.tongnamuking_backend.dto.ManualGameSegmentRequest;
 import com.tongnamuking.tongnamuking_backend.service.ChatStatsService;
+import com.tongnamuking.tongnamuking_backend.service.ChatRankingService;
+import com.tongnamuking.tongnamuking_backend.service.ClientIdentifierService;
 import com.tongnamuking.tongnamuking_backend.service.MemoryChatDataService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +31,8 @@ public class ChatStatsController {
 
     private final ChatStatsService chatStatsService;
     private final MemoryChatDataService memoryChatDataService;
+    private final ChatRankingService chatRankingService;
+    private final ClientIdentifierService clientIdentifierService;
 
     @GetMapping("/channel/{channelName}")
     @Operation(summary = "채널별 채팅 통계 조회", description = "지정된 채널의 채팅 통계를 조회합니다. 시간 범위를 지정할 수 있습니다.")
@@ -67,9 +71,12 @@ public class ChatStatsController {
 
         List<ChatStatsResponse> stats;
         if (hours > 0) {
+            // 시간범위 조회는 타임스탬프가 필요해서 아직 메모리 방식 사용
             stats = memoryChatDataService.getChatStatsByChannelAndTimeRange(request, channelName, hours);
         } else {
-            stats = memoryChatDataService.getChatStatsByChannel(request, channelName);
+            // 전체 순위는 Redis Sorted Set에서 조회 (재계산 없음, 재시작에도 유지)
+            String clientId = clientIdentifierService.resolveClientId(request);
+            stats = chatRankingService.getRanking(clientId, channelName);
         }
 
         return ResponseEntity.ok(stats);

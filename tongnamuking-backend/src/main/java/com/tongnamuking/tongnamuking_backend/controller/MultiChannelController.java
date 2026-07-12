@@ -3,6 +3,7 @@ package com.tongnamuking.tongnamuking_backend.controller;
 import com.tongnamuking.tongnamuking_backend.dto.ChatMessageRequest;
 import com.tongnamuking.tongnamuking_backend.service.MultiChannelCollectionService;
 import com.tongnamuking.tongnamuking_backend.service.MemoryChatDataService;
+import com.tongnamuking.tongnamuking_backend.service.ChatRankingService;
 import com.tongnamuking.tongnamuking_backend.service.ClientIdentifierService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +27,7 @@ public class MultiChannelController {
 
         private final MultiChannelCollectionService multiChannelCollectionService;
         private final MemoryChatDataService memoryChatDataService;
+        private final ChatRankingService chatRankingService;
         private final ClientIdentifierService clientIdentifierService;
 
         @PostMapping("/start/{channelId}")
@@ -156,12 +158,18 @@ public class MultiChannelController {
                                         channelName, request.getUsername(), request.getMessage(),
                                         request.getClientId());
 
-                        // 멀티채널 채팅을 메모리에 저장
+                        // 멀티채널 채팅을 메모리에 저장 (시간범위 조회용)
                         memoryChatDataService.addChatMessage(
                                         request.getClientId(),
                                         request.getUsername(),
                                         channelName,
                                         request.getMessage());
+
+                        // Redis 순위 갱신 (전체 순위 조회용)
+                        chatRankingService.incrementScore(
+                                        request.getClientId(),
+                                        channelName,
+                                        request.getUsername());
 
                         log.info("✅ 멀티채널 채팅 메모리에 저장 완료");
                         return ResponseEntity.ok("Multi-channel chat message stored in memory");
