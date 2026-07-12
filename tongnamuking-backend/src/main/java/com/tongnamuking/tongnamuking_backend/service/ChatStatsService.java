@@ -336,41 +336,6 @@ public class ChatStatsService {
         return "GAME".equals(categoryType);
     }
 
-    // 디버그 정보 조회
-    public Object getDebugInfo(String channelName) {
-        Optional<Channel> channelOpt = channelRepository.findByChannelName(channelName);
-        if (channelOpt.isEmpty()) {
-            return "채널을 찾을 수 없습니다: " + channelName;
-        }
-
-        Channel channel = channelOpt.get();
-        LocalDateTime broadcastStart = getBroadcastStartTime(channel);
-
-        // 카테고리 변경 이벤트 조회
-        List<CategoryChangeEvent> categoryChanges = categoryChangeEventRepository.findByChannelAndTimeRange(
-                channel.getId(), broadcastStart);
-
-        // 채팅 메시지 수 조회
-        long totalMessages = chatMessageRepository.count();
-        long channelMessages = chatMessageRepository.findChatStatsByChannel(channel.getId()).size();
-
-        return java.util.Map.of(
-                "channelName", channelName,
-                "totalMessages", totalMessages,
-                "channelMessages", channelMessages,
-                "categoryChanges", categoryChanges,
-                "broadcastStart", broadcastStart,
-                "now", LocalDateTime.now());
-    }
-
-    // 모든 데이터 삭제
-    @Transactional
-    public void clearAllData() {
-        chatMessageRepository.deleteAll();
-        categoryChangeEventRepository.deleteAll();
-        userRepository.deleteAll();
-    }
-
     // 방송 시작 시간 찾기 (가장 오래된 채팅 메시지 시간)
     private LocalDateTime findStreamStartTime(Channel channel) {
         LocalDateTime broadcastStart = getBroadcastStartTime(channel);

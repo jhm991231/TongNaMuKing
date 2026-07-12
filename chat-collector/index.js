@@ -134,7 +134,7 @@ class ChatCollector {
       // URL 선택: 독케익 전용이면 독케익 API, 아니면 범용 API
       const endpoint = isDogCake
         ? "/api/dogcake-collection/message"
-        : "/api/chat/message/from-collector";
+        : "/api/multi-channel-collection/message/from-collector";
 
       console.log(`메시지 전송: ${endpoint} (클라이언트: ${data.clientId})`);
 

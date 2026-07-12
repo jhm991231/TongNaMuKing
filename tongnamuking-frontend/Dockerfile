@@ -13,7 +13,9 @@ RUN npm install
 COPY . .
 
 # Build the application
-RUN npm run build
+# 로컬 docker-compose 전용 빌드: development 모드로 .env(localhost:8080)를 사용하게 하여
+# .env.production의 Railway 주소가 박히지 않도록 한다. (프로덕션 배포는 루트 Dockerfile을 사용)
+RUN npm run build -- --mode development
 
 # Production stage
 FROM nginx:alpine
