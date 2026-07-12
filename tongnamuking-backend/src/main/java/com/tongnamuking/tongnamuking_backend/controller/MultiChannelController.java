@@ -152,7 +152,7 @@ public class MultiChannelController {
                         String channelName = request.getChannelName() != null ? request.getChannelName()
                                         : request.getChannelId();
 
-                        log.info("멀티채널 채팅 수신 - 채널: {}, 사용자: {}, 메시지: {}, 클라이언트: {}",
+                        log.debug("멀티채널 채팅 수신 - 채널: {}, 사용자: {}, 메시지: {}, 클라이언트: {}",
                                         channelName, request.getUsername(), request.getMessage(),
                                         request.getClientId());
 

@@ -85,7 +85,7 @@ public class DogCakeController {
         try {
             String channelName = request.getChannelName() != null ? request.getChannelName() : request.getChannelId();
 
-            log.info("독케익 채팅 수신 - 채널: {}, 사용자: {}, 메시지: {}, 클라이언트: {}",
+            log.debug("독케익 채팅 수신 - 채널: {}, 사용자: {}, 메시지: {}, 클라이언트: {}",
                     channelName, request.getUsername(), request.getMessage(), request.getClientId());
 
             // 독케익 채팅을 데이터베이스에 저장 (영구 보관)
