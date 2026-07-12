@@ -69,13 +69,14 @@ public class ChatStatsController {
 
         log.info("채팅 통계 조회: 채널={}", channelName);
 
+        String clientId = clientIdentifierService.resolveClientId(request);
+
         List<ChatStatsResponse> stats;
         if (hours > 0) {
-            // 시간범위 조회는 타임스탬프가 필요해서 아직 메모리 방식 사용
-            stats = memoryChatDataService.getChatStatsByChannelAndTimeRange(request, channelName, hours);
+            // 시간범위 순위: 1분 버킷 합산 (ZUNIONSTORE + 10초 캐시)
+            stats = chatRankingService.getRankingByTimeRange(clientId, channelName, hours);
         } else {
-            // 전체 순위는 Redis Sorted Set에서 조회 (재계산 없음, 재시작에도 유지)
-            String clientId = clientIdentifierService.resolveClientId(request);
+            // 전체 순위: Redis Sorted Set에서 조회 (재계산 없음, 재시작에도 유지)
             stats = chatRankingService.getRanking(clientId, channelName);
         }
 
