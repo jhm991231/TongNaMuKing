@@ -2,7 +2,6 @@ package com.tongnamuking.tongnamuking_backend.controller;
 
 import com.tongnamuking.tongnamuking_backend.dto.ChatMessageRequest;
 import com.tongnamuking.tongnamuking_backend.service.MultiChannelCollectionService;
-import com.tongnamuking.tongnamuking_backend.service.MemoryChatDataService;
 import com.tongnamuking.tongnamuking_backend.service.ChatRankingService;
 import com.tongnamuking.tongnamuking_backend.service.ClientIdentifierService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +25,6 @@ import java.util.Map;
 public class MultiChannelController {
 
         private final MultiChannelCollectionService multiChannelCollectionService;
-        private final MemoryChatDataService memoryChatDataService;
         private final ChatRankingService chatRankingService;
         private final ClientIdentifierService clientIdentifierService;
 
@@ -147,7 +145,7 @@ public class MultiChannelController {
 
         // chat-collector가 호출하는 API
         @PostMapping("/message/from-collector")
-        @Operation(summary = "멀티채널 채팅 메시지 수신", description = "멀티채널 chat-collector로부터 채팅 메시지를 수신하여 메모리에 저장합니다.")
+        @Operation(summary = "멀티채널 채팅 메시지 수신", description = "멀티채널 chat-collector로부터 채팅 메시지를 수신하여 Redis 순위에 반영합니다.")
         public ResponseEntity<String> addMultiChannelMessage(@RequestBody ChatMessageRequest request) {
                 try {
                         // channelName이 있으면 사용하고, 없으면 channelId 사용
@@ -158,34 +156,24 @@ public class MultiChannelController {
                                         channelName, request.getUsername(), request.getMessage(),
                                         request.getClientId());
 
-                        // 멀티채널 채팅을 메모리에 저장 (시간범위 조회용)
-                        memoryChatDataService.addChatMessage(
-                                        request.getClientId(),
-                                        request.getUsername(),
-                                        channelName,
-                                        request.getMessage());
-
-                        // Redis 순위 갱신 (전체 순위 조회용)
+                        // Redis 순위 갱신 (전체 순위 + 1분 버킷)
                         chatRankingService.incrementScore(
                                         request.getClientId(),
                                         channelName,
                                         request.getUsername());
 
-                        log.info("✅ 멀티채널 채팅 메모리에 저장 완료");
-                        return ResponseEntity.ok("Multi-channel chat message stored in memory");
+                        return ResponseEntity.ok("Multi-channel chat message counted in Redis");
 
                 } catch (Exception e) {
-                        log.error("❌ 멀티채널 채팅 메시지 저장 실패: {}", e.getMessage(), e);
-                        return ResponseEntity.internalServerError().body("Failed to store multi-channel chat message");
+                        log.error("멀티채널 채팅 메시지 처리 실패: {}", e.getMessage(), e);
+                        return ResponseEntity.internalServerError().body("Failed to process multi-channel chat message");
                 }
         }
 
         @GetMapping("/ping")
         @Operation(summary = "세션 활동 핑", description = "클라이언트의 활동 시간을 갱신합니다.")
         public ResponseEntity<Map<String, String>> ping(HttpServletRequest request) {
-                // 클라이언트 활동 시간 업데이트
-                memoryChatDataService.updateClientActivity(request);
-
+                // 클라이언트 활동 시간 업데이트 (수집기 프로세스 정리용)
                 String clientId = clientIdentifierService.resolveClientId(request);
                 multiChannelCollectionService.updateClientActivity(clientId);
 

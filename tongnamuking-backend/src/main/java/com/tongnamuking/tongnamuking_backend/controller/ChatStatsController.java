@@ -6,7 +6,6 @@ import com.tongnamuking.tongnamuking_backend.dto.ManualGameSegmentRequest;
 import com.tongnamuking.tongnamuking_backend.service.ChatStatsService;
 import com.tongnamuking.tongnamuking_backend.service.ChatRankingService;
 import com.tongnamuking.tongnamuking_backend.service.ClientIdentifierService;
-import com.tongnamuking.tongnamuking_backend.service.MemoryChatDataService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat-stats")
@@ -30,7 +28,6 @@ import java.util.Map;
 public class ChatStatsController {
 
     private final ChatStatsService chatStatsService;
-    private final MemoryChatDataService memoryChatDataService;
     private final ChatRankingService chatRankingService;
     private final ClientIdentifierService clientIdentifierService;
 
@@ -130,11 +127,5 @@ public class ChatStatsController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("데이터 삭제 실패: " + e.getMessage());
         }
-    }
-
-    @GetMapping("/memory-stats")
-    @Operation(summary = "메모리 통계 조회", description = "현재 메모리에 저장된 채팅 데이터 통계를 조회합니다.")
-    public ResponseEntity<Map<String, Object>> getMemoryStats() {
-        return ResponseEntity.ok(memoryChatDataService.getMemoryStats());
     }
 }
