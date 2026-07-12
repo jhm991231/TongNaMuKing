@@ -18,6 +18,19 @@ services:
       - tongnamuking-network
     restart: unless-stopped
 
+  # Redis (실시간 순위 저장소)
+  redis:
+    image: redis:7-alpine
+    container_name: tongnamuking-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - tongnamuking-network
+    restart: unless-stopped
+
   # Spring Boot Backend
   backend:
     build:
@@ -26,6 +39,7 @@ services:
     container_name: tongnamuking-backend
     depends_on:
       - mysql
+      - redis
     environment:
       DATABASE_URL: jdbc:mysql://mysql:3306/tongnamuking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
       DATABASE_USERNAME: root
@@ -33,6 +47,8 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
       BACKEND_URL: http://backend:8080
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "8080:8080"
     networks:
@@ -65,6 +81,8 @@ services:
 
 volumes:
   mysql_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:
