@@ -7,7 +7,7 @@ COPY tongnamuking-backend/gradle gradle
 COPY tongnamuking-backend/src src
 RUN gradle build -x test
 
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Install Node.js for chat collector

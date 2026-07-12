@@ -16,7 +16,7 @@ COPY tongnamuking-backend/src src
 RUN gradle build -x test
 
 # Production stage
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Install Node.js and nginx
