@@ -19,7 +19,8 @@ public class ChatService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final ChatMessageRepository chatMessageRepository;
-    
+    private final ChatRankingService chatRankingService;
+
     @Transactional
     public void addChatMessage(String username, String channelName, String message, String clientId) {
         
@@ -54,5 +55,8 @@ public class ChatService {
         
         user.setTotalChatCount(user.getTotalChatCount() + 1);
         userRepository.save(user);
+
+        // Redis 순위 캐시 갱신 (캐시가 있을 때만 +1, 없으면 다음 백필이 포함)
+        chatRankingService.incrementDbRankingIfCached(channelName, username);
     }
 }
