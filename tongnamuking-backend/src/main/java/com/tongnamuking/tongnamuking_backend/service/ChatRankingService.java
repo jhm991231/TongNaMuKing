@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -42,6 +43,11 @@ public class ChatRankingService {
 
     private String key(String clientId, String channelName) {
         return "chat:rank:" + clientId + ":" + channelName;
+    }
+
+    /** MySQL이 원본인 전역 순위 캐시 키 (독케익 경로용) */
+    private String dbKey(String channelName) {
+        return "chat:rank:db:" + channelName;
     }
 
     private String bucketKey(String clientId, String channelName, LocalDateTime time) {
@@ -84,6 +90,45 @@ public class ChatRankingService {
             redisTemplate.expire(unionKey, UNION_CACHE_TTL);
         }
         return readRanking(unionKey);
+    }
+
+    // ===== MySQL 기반 전역 순위 캐시 (Cache-Aside, 독케익 경로) =====
+
+    /** 전역 순위 캐시 존재 여부 — 없으면 호출측이 MySQL 집계 후 backfill */
+    public boolean hasDbRanking(String channelName) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(dbKey(channelName)));
+    }
+
+    /** MySQL 집계 결과를 캐시에 적재 (백필). 무거운 집계는 캐시가 없을 때 한 번만 수행된다. */
+    public void backfillDbRanking(String channelName, List<ChatStatsResponse> stats) {
+        if (stats.isEmpty()) {
+            return;
+        }
+        String key = dbKey(channelName);
+        Set<ZSetOperations.TypedTuple<String>> tuples = new HashSet<>();
+        for (ChatStatsResponse stat : stats) {
+            tuples.add(ZSetOperations.TypedTuple.of(stat.getUsername(), stat.getMessageCount().doubleValue()));
+        }
+        redisTemplate.opsForZSet().add(key, tuples);
+        redisTemplate.expire(key, RANKING_TTL);
+        log.info("전역 순위 캐시 백필: 채널={}, 유저 {}명", channelName, stats.size());
+    }
+
+    /**
+     * 캐시가 존재할 때만 +1. 키가 없을 때 증분하면 "채팅 1개짜리 반쪽 키"가 생겨
+     * 다음 조회가 백필을 건너뛰므로, 없으면 아무것도 하지 않는다 (다음 백필이 포함).
+     */
+    public void incrementDbRankingIfCached(String channelName, String username) {
+        String key = dbKey(channelName);
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+            redisTemplate.opsForZSet().incrementScore(key, username, 1);
+            redisTemplate.expire(key, RANKING_TTL);
+        }
+    }
+
+    /** 전역 순위 조회 */
+    public List<ChatStatsResponse> getDbRanking(String channelName) {
+        return readRanking(dbKey(channelName));
     }
 
     /** 키의 Sorted Set을 점수 내림차순으로 읽어 순위 응답으로 변환 */

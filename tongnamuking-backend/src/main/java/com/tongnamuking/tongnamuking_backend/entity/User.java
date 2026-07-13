@@ -17,10 +17,6 @@ public class User {
     
     @Column(unique = true, nullable = false)
     private String username;
-    
-    
+
     private String profileImageUrl;
-    
-    @Column(nullable = false)
-    private Integer totalChatCount = 0;
 }

@@ -30,15 +30,28 @@ public class ChatStatsService {
     private final ChannelRepository channelRepository;
     private final CategoryChangeEventRepository categoryChangeEventRepository;
     private final UserRepository userRepository;
+    private final ChatRankingService chatRankingService;
 
+    /**
+     * 채널 전체 순위 조회 — Cache-Aside.
+     * Redis 캐시가 있으면 바로 반환하고, 없으면 MySQL 집계 후 캐시에 백필한다.
+     * 무거운 GROUP BY 집계는 캐시가 없을 때(최초/TTL 만료/Redis 유실) 한 번만 실행된다.
+     */
     public List<ChatStatsResponse> getChatStatsByChannel(String channelName) {
+        if (chatRankingService.hasDbRanking(channelName)) {
+            return chatRankingService.getDbRanking(channelName);
+        }
+
         Optional<Channel> channel = channelRepository.findByChannelName(channelName);
         if (channel.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Object[]> results = chatMessageRepository.findChatStatsByChannel(channel.get().getId());
-        return convertToResponseList(results);
+        List<ChatStatsResponse> stats = convertToResponseList(results);
+
+        chatRankingService.backfillDbRanking(channelName, stats);
+        return stats;
     }
 
     public List<ChatStatsResponse> getChatStatsByChannelAndTimeRange(String channelName, double hours) {
