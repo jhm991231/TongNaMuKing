@@ -12,10 +12,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
-    
-    @Query("SELECT u FROM User u ORDER BY u.totalChatCount DESC")
-    List<User> findAllOrderByTotalChatCountDesc();
-    
+
     @Query("SELECT u FROM User u JOIN ChatMessage cm ON u.id = cm.user.id WHERE cm.channel.id = :channelId GROUP BY u.id ORDER BY COUNT(cm.id) DESC")
     List<User> findTopUsersByChannelOrderByMessageCount(@Param("channelId") Long channelId);
 }

@@ -28,7 +28,6 @@ public class ChatService {
             .orElseGet(() -> {
                 User newUser = new User();
                 newUser.setUsername(username);
-                newUser.setTotalChatCount(0);
                 return userRepository.save(newUser);
             });
         
@@ -53,9 +52,6 @@ public class ChatService {
         chatMessage.setTimestamp(LocalDateTime.now());
         chatMessageRepository.save(chatMessage);
         
-        user.setTotalChatCount(user.getTotalChatCount() + 1);
-        userRepository.save(user);
-
         // Redis 순위 캐시 갱신 (캐시가 있을 때만 +1, 없으면 다음 백필이 포함)
         chatRankingService.incrementDbRankingIfCached(channelName, username);
     }
