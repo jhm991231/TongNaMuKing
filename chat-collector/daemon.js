@@ -14,6 +14,9 @@ const channels = new Map();
 /** 구독 진행 중인 채널. 동시 요청이 커넥션을 두 번 만드는 것을 막는다. */
 const pending = new Map();
 
+/** 구독이 진행되는 동안 해제 요청이 들어온 채널. in-flight 구독보다 DELETE가 우선한다. */
+const cancelled = new Set();
+
 // ===== 백엔드 전송 =====
 
 async function postToBackend(body) {
@@ -27,31 +30,42 @@ async function postToBackend(body) {
 }
 
 function handleChat(channelId, channelName, chat) {
-  const message = chat.hidden ? "[블라인드 처리됨]" : chat.message;
-  postToBackend({
-    type: "chat",
-    channelId,
-    channelName,
-    userId: chat.profile.userIdHash,
-    username: chat.profile.nickname,
-    message,
-    timestamp: new Date().toISOString(),
-    hidden: chat.hidden,
-  });
+  try {
+    const message = chat.hidden ? "[블라인드 처리됨]" : chat.message;
+    postToBackend({
+      type: "chat",
+      channelId,
+      channelName,
+      userId: chat.profile.userIdHash,
+      username: chat.profile.nickname,
+      message,
+      timestamp: new Date().toISOString(),
+      hidden: chat.hidden,
+    });
+  } catch (error) {
+    // 이벤트 형태가 예상과 다를 때 예외가 EventEmitter 밖으로 새어나가 데몬 전체를
+    // 죽이는 것을 막는다. 이 데몬은 모든 채널을 한 프로세스에서 처리하므로
+    // 채널 하나의 이상 이벤트가 전체 채널 수집을 멈추게 해서는 안 된다.
+    console.error(`[${channelName}] 채팅 메시지 처리 실패:`, error.message);
+  }
 }
 
 function handleDonation(channelId, channelName, donation) {
-  console.log(`[${channelName}] 후원 ${donation.profile.nickname}: ${donation.payAmount}원`);
-  postToBackend({
-    type: "donation",
-    channelId,
-    channelName,
-    userId: donation.profile.userIdHash,
-    username: donation.profile.nickname,
-    message: donation.message,
-    timestamp: new Date().toISOString(),
-    payAmount: donation.payAmount,
-  });
+  try {
+    console.log(`[${channelName}] 후원 ${donation.profile.nickname}: ${donation.payAmount}원`);
+    postToBackend({
+      type: "donation",
+      channelId,
+      channelName,
+      userId: donation.profile.userIdHash,
+      username: donation.profile.nickname,
+      message: donation.message,
+      timestamp: new Date().toISOString(),
+      payAmount: donation.payAmount,
+    });
+  } catch (error) {
+    console.error(`[${channelName}] 후원 메시지 처리 실패:`, error.message);
+  }
 }
 
 // ===== 구독 관리 =====
@@ -73,7 +87,30 @@ async function doSubscribe(channelId) {
   chat.on("chat", (c) => handleChat(channelId, channelName, c));
   chat.on("donation", (d) => handleDonation(channelId, channelName, d));
 
-  await chat.connect();
+  try {
+    await chat.connect();
+  } catch (error) {
+    // connect()가 소켓을 부분적으로 만든 뒤 실패할 수 있다. 버려지는 chat 객체를
+    // 그대로 두면 소켓이 leak된다.
+    try {
+      await chat.disconnect();
+    } catch {
+      // 실패한 연결을 정리하는 중이므로 무시
+    }
+    throw error;
+  }
+
+  if (cancelled.has(channelId)) {
+    // 연결이 진행되는 동안 DELETE 요청이 들어왔다. 구독을 설치하지 않고 즉시 해제해서
+    // Spring이 이미 제거됐다고 믿는 커넥션이 살아남는 것(orphan)을 막는다.
+    try {
+      await chat.disconnect();
+    } catch {
+      // 취소된 연결을 정리하는 중이므로 무시
+    }
+    console.log(`구독 취소됨(연결 중 해제 요청 수신): ${channelName} (${channelId})`);
+    return { ok: true, channelName, already: false };
+  }
 
   channels.set(channelId, { chat, channelName });
   console.log(`구독 시작: ${channelName} (${channelId}) — 현재 ${channels.size}개 채널`);
@@ -89,13 +126,27 @@ async function subscribe(channelId) {
   if (pending.has(channelId)) {
     return pending.get(channelId);
   }
-  const promise = doSubscribe(channelId).finally(() => pending.delete(channelId));
+  const promise = doSubscribe(channelId).finally(() => {
+    pending.delete(channelId);
+    cancelled.delete(channelId);
+  });
   pending.set(channelId, promise);
   return promise;
 }
 
 /** 멱등: 구독 중이 아니어도 성공을 반환한다. */
 async function unsubscribe(channelId) {
+  if (pending.has(channelId)) {
+    // in-flight 구독이 있다. DELETE가 이겨야 하므로 취소를 표시하고 구독 시도가
+    // 끝날 때까지 기다린다(성공하면 doSubscribe가 즉시 disconnect한다).
+    cancelled.add(channelId);
+    try {
+      await pending.get(channelId);
+    } catch {
+      // 구독 시도 자체가 실패했다면 정리할 것이 없다.
+    }
+  }
+
   const entry = channels.get(channelId);
   if (!entry) {
     return { ok: true, already: true };
@@ -155,18 +206,35 @@ server.listen(PORT, "127.0.0.1", () => {
 
 let shuttingDown = false;
 
+/** 채널 disconnect가 멈추더라도 데몬은 이 시간 안에 반드시 종료된다. */
+const SHUTDOWN_GRACE_MS = 5000;
+
 async function shutdown(reason) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`데몬을 종료합니다 (${reason})`);
   server.close();
-  for (const [, entry] of channels) {
-    try {
-      await entry.chat.disconnect();
-    } catch {
-      // 종료 중이므로 무시
+
+  const disconnectAll = (async () => {
+    for (const [, entry] of channels) {
+      try {
+        await entry.chat.disconnect();
+      } catch {
+        // 종료 중이므로 무시
+      }
     }
-  }
+  })();
+
+  // disconnect()가 하나라도 멈추면 종료 루프가 끝나지 않아 프로세스가 행하고,
+  // stdin EOF 기반 고아 프로세스 방지도 무력화된다. 유예 시간이 지나면 무조건 종료한다.
+  let graceTimer;
+  const grace = new Promise((resolve) => {
+    graceTimer = setTimeout(resolve, SHUTDOWN_GRACE_MS);
+  });
+
+  await Promise.race([disconnectAll, grace]);
+  clearTimeout(graceTimer);
+
   channels.clear();
   process.exit(0);
 }
