@@ -137,11 +137,21 @@ public class MultiChannelController {
                                         channelName, request.getUsername(), subscribers.size());
 
                         // 구독 중인 모든 클라이언트의 순위에 반영 (전체 순위 + 1분 버킷)
+                        // 클라이언트 하나씩 격리해서 처리한다. incrementScore는 Redis 쓰기를 두 번 하는데,
+                        // 격리 없이 순회하다 한 클라이언트에서 예외(예: 일시적 Redis 오류)가 나면
+                        // 그 시점에 루프 전체가 중단되어 반복 순서상 뒤에 있던 나머지 구독자들은
+                        // 이번 채팅을 영구히 놓친다. 데몬의 postToBackend는 fire-and-forget이라
+                        // 재시도도 없으므로, 여기서 막지 않으면 복구할 방법이 없다.
                         for (String clientId : subscribers) {
-                                chatRankingService.incrementScore(
-                                                clientId,
-                                                channelName,
-                                                request.getUsername());
+                                try {
+                                        chatRankingService.incrementScore(
+                                                        clientId,
+                                                        channelName,
+                                                        request.getUsername());
+                                } catch (Exception e) {
+                                        log.error("멀티채널 순위 반영 실패 - 클라이언트: {}, 채널: {}, 사용자: {}",
+                                                        clientId, channelName, request.getUsername(), e);
+                                }
                         }
 
                         return ResponseEntity.ok("Multi-channel chat message counted in Redis");

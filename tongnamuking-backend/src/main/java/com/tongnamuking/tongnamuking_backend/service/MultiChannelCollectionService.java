@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 멀티채널 수집 조율.
@@ -29,7 +31,58 @@ public class MultiChannelCollectionService {
     /** 클라이언트별 마지막 활동 시간 (핑 기반) */
     private final Map<String, Long> clientLastActivity = new ConcurrentHashMap<>();
 
+    /**
+     * 채널별 startCollection 직렬화 락.
+     *
+     * registry.add()로 "첫 구독자인지" 판정하는 것과, 그 판정에 따라 데몬에
+     * 실제로 구독을 거는 것(~1초 걸리는 동기 HTTP 호출) 사이에는 시간차가 있다.
+     * 이 둘을 하나의 원자적 단위로 묶지 않으면, A가 첫 구독자로 판정되어 데몬 호출을
+     * 기다리는 동안 B가 같은 채널에 들어와 "이미 구독자가 있다"고 잘못 판정받고
+     * 데몬 호출 없이 바로 성공 처리된다. 이후 A의 데몬 구독이 실패해 롤백되면,
+     * B는 "구독자는 있으나 데몬 커넥션은 없는" 유령 상태로 남아 그 채널은 아무도
+     * 모르게 0건만 집계하게 된다.
+     *
+     * 채널마다 별도의 락을 두어 서로 다른 채널끼리는 절대 경합하지 않게 하고,
+     * 참조 카운트로 사용자가 없어진 락 엔트리는 즉시 맵에서 제거해 맵이
+     * 무한정 커지지 않게 한다 (동시에 사용 중인 채널 수만큼만 유지된다).
+     */
+    private final Map<String, ChannelLock> channelLocks = new ConcurrentHashMap<>();
+
+    private static final class ChannelLock {
+        private final ReentrantLock lock = new ReentrantLock();
+        private final AtomicInteger refCount = new AtomicInteger(0);
+    }
+
+    private ChannelLock acquireChannelLock(String channelId) {
+        ChannelLock channelLock = channelLocks.compute(channelId, (key, existing) -> {
+            ChannelLock target = existing != null ? existing : new ChannelLock();
+            target.refCount.incrementAndGet();
+            return target;
+        });
+        channelLock.lock.lock();
+        return channelLock;
+    }
+
+    private void releaseChannelLock(String channelId, ChannelLock channelLock) {
+        channelLock.lock.unlock();
+        channelLocks.compute(channelId, (key, current) -> {
+            if (current == channelLock && channelLock.refCount.decrementAndGet() == 0) {
+                return null;
+            }
+            return current;
+        });
+    }
+
     public boolean startCollection(String clientId, String channelId) {
+        ChannelLock channelLock = acquireChannelLock(channelId);
+        try {
+            return doStartCollection(clientId, channelId);
+        } finally {
+            releaseChannelLock(channelId, channelLock);
+        }
+    }
+
+    private boolean doStartCollection(String clientId, String channelId) {
         if (registry.isSubscribed(channelId, clientId)) {
             log.warn("클라이언트 {}에서 이미 수집 중인 채널입니다: {}", clientId, channelId);
             return false;
