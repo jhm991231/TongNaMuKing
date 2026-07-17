@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Duration;
 import java.util.Set;
 
 /**
@@ -30,6 +31,18 @@ public class CollectorDaemonManager {
     private static final long MAX_BACKOFF_MS = 30_000;
     /** 이 시간 이상 살아 있었으면 정상 기동으로 보고 백오프를 리셋한다 */
     private static final long STABLE_UPTIME_MS = 60_000;
+
+    /**
+     * GET /health가 200을 반환할 때까지 기다리는 최대 시간.
+     * 이 기기에서 측정한 결과 데몬은 리스닝을 시작하기까지 ~180ms가 걸린다. 5초는
+     * 그보다 넉넉한 여유를 두면서도, 데몬이 진짜로 죽어버린 경우 무한정 막히지 않게 한다.
+     */
+    private static final Duration DAEMON_READY_TIMEOUT = Duration.ofSeconds(5);
+    private static final long DAEMON_READY_POLL_INTERVAL_MS = 50;
+
+    /** replay 중 subscribe()가 실패했을 때 재시도할 최대 횟수(최초 시도 포함). */
+    private static final int REPLAY_SUBSCRIBE_ATTEMPTS = 3;
+    private static final long REPLAY_SUBSCRIBE_RETRY_DELAY_MS = 300;
 
     private final ChannelSubscriptionRegistry registry;
 
@@ -82,9 +95,9 @@ public class CollectorDaemonManager {
      * (즉 process 필드가 새 프로세스로 갱신될 때까지) 대기하므로 "죽은 구(舊) 프로세스만
      * 확인하고 정상 종료로 오판"하는 경합을 막는다.
      */
-    private synchronized void startDaemon() {
+    private synchronized boolean startDaemon() {
         if (shuttingDown) {
-            return;
+            return false;
         }
         try {
             File script = new File(scriptPath);
@@ -100,7 +113,7 @@ public class CollectorDaemonManager {
             if (shuttingDown) {
                 log.info("종료 처리 중이라 방금 시작한 수집기 데몬을 즉시 종료합니다 (PID: {})", started.pid());
                 started.destroyForcibly();
-                return;
+                return false;
             }
 
             long startedAt = System.currentTimeMillis();
@@ -108,6 +121,7 @@ public class CollectorDaemonManager {
 
             pipeLogs(started);
             superviseProcess(started, startedAt);
+            return true;
 
         } catch (Exception e) {
             // IOException뿐 아니라 ProcessBuilder/environment() 등에서 나올 수 있는 어떤
@@ -116,6 +130,7 @@ public class CollectorDaemonManager {
             // CompletableFuture가 이를 삼켜버리고 복구 루프 전체가 조용히 영구 정지한다.
             log.error("수집기 데몬 시작 실패 (script: {})", scriptPath, e);
             scheduleRestart(System.currentTimeMillis());
+            return false;
         }
     }
 
@@ -172,7 +187,21 @@ public class CollectorDaemonManager {
                 if (shuttingDown) {
                     return;
                 }
-                startDaemon();
+                boolean started = startDaemon();
+                if (!started) {
+                    // startDaemon()이 실패한 경우 이미 자체적으로 다음 재시작을 예약하고
+                    // 로그도 남겼다. 존재하지도 않는 데몬에 재구독 POST를 쏘아 "재구독 실패"
+                    // 로그만 채널 수만큼 찍는 헛수고를 막기 위해 여기서 조용히 빠진다.
+                    return;
+                }
+                if (!awaitDaemonReady(DAEMON_READY_TIMEOUT)) {
+                    // 프로세스는 떴지만 HTTP 서버가 데드라인 안에 리스닝을 시작하지 않았다.
+                    // 지금 재구독을 강행하면 전부 REFUSED로 실패해 레지스트리는 채널을 들고
+                    // 있는데 데몬 커넥션은 하나도 없는 유령 상태가 영구화된다. 데몬이 실제로
+                    // 죽으면 supervise 스레드가 이 재시작 루프를 다시 돌린다.
+                    log.error("수집기 데몬이 {}ms 내에 준비되지 않아 재구독을 건너뜁니다", DAEMON_READY_TIMEOUT.toMillis());
+                    return;
+                }
                 replaySubscriptions();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -194,7 +223,19 @@ public class CollectorDaemonManager {
         Thread.ofVirtual().name(name).start(task);
     }
 
-    /** 데몬 재시작 후 레지스트리 기준으로 모든 채널을 다시 구독한다. */
+    /**
+     * 데몬 재시작 후 레지스트리 기준으로 모든 채널을 다시 구독한다.
+     *
+     * 의도적으로 {@link MultiChannelCollectionService}의 채널별 락은 잡지 않는다. 검토 결과,
+     * replay는 오직 POST(subscribe)만 보내므로 커넥션을 "추가"할 수만 있을 뿐, 위험한 방향인
+     * "레지스트리에는 구독자가 있는데 데몬 커넥션은 없는" 유령 상태를 만들어낼 수 없다.
+     * 반대 방향(레지스트리에 없는 채널에 커넥션만 먼저 생기는 오펀)은 이 루프가 도는 극히
+     * 짧은 창(수 ms) 동안만 가능하고, daemon.js의 subscribe()가 멱등(already:true)이라
+     * 스스로 낫는다 — 그 사이 도착한 채팅은 팬아웃 구독자가 없어 "No subscribers"로
+     * 버려질 뿐 잘못 집계되지는 않는다. 락을 잡으면 복구가 끝날 때까지(HTTP 호출 포함 최대
+     * 몇 초) 그 채널에 들어오려는 모든 신규 참가자를 막아야 하므로, 이 트레이드오프는
+     * 받아들이지 않기로 했다.
+     */
     private void replaySubscriptions() {
         Set<String> channels = registry.getAllChannels();
         if (channels.isEmpty()) {
@@ -202,10 +243,72 @@ public class CollectorDaemonManager {
         }
         log.info("수집기 데몬 재구독 시작: {}개 채널", channels.size());
         for (String channelId : channels) {
-            boolean ok = subscribe(channelId);
+            boolean ok = subscribeWithRetry(channelId);
             if (!ok) {
-                log.error("재구독 실패: {}", channelId);
+                log.error("재구독 실패: {} ({}회 시도)", channelId, REPLAY_SUBSCRIBE_ATTEMPTS);
             }
+        }
+    }
+
+    /**
+     * replay 중 실패한 채널은 다음 데몬 크래시가 나기 전까지 재시도될 다른 경로가 없으므로,
+     * 여기서 짧게 몇 번 더 시도해 본다.
+     */
+    private boolean subscribeWithRetry(String channelId) {
+        for (int attempt = 1; attempt <= REPLAY_SUBSCRIBE_ATTEMPTS; attempt++) {
+            if (subscribe(channelId)) {
+                return true;
+            }
+            if (attempt < REPLAY_SUBSCRIBE_ATTEMPTS) {
+                try {
+                    Thread.sleep(REPLAY_SUBSCRIBE_RETRY_DELAY_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 데몬의 GET /health가 200을 반환할 때까지 짧은 간격으로 폴링한다.
+     *
+     * ProcessBuilder.start()는 Node 프로세스가 실제로 HTTP 서버를 바인딩하기 전에 반환된다.
+     * 이 머신에서 측정한 결과 데몬이 리스닝을 시작하기까지 ~180ms가 걸리는 반면, 이 직후의
+     * 첫 연결 시도는 ~9ms 만에 REFUSED를 받는다 — 게이트 없이는 매번 이 경합에서 진다.
+     * subscribe()와 재시작 후 replay 모두 이 게이트를 통과해야 한다.
+     */
+    private boolean awaitDaemonReady(Duration timeout) {
+        if (!enabled || restClient == null) {
+            return false;
+        }
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (true) {
+            if (shuttingDown) {
+                return false;
+            }
+            if (pollHealth()) {
+                return true;
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                return false;
+            }
+            try {
+                Thread.sleep(DAEMON_READY_POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+    }
+
+    private boolean pollHealth() {
+        try {
+            restClient.get().uri("/health").retrieve().toBodilessEntity();
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -213,6 +316,14 @@ public class CollectorDaemonManager {
     public boolean subscribe(String channelId) {
         if (!enabled) {
             log.warn("수집기 데몬이 비활성 상태입니다. 구독 무시: {}", channelId);
+            return false;
+        }
+        if (!awaitDaemonReady(DAEMON_READY_TIMEOUT)) {
+            // 데몬 기동 직후(또는 재시작 직후)의 좁은 창에서 구독 요청이 들어오면 여기서
+            // 걸린다. ProcessBuilder.start()는 HTTP 서버가 리스닝을 시작하기 전에 반환되므로,
+            // 이 게이트 없이 바로 POST했다면 REFUSED로 실패해 사용자에게 그대로 실패가
+            // 노출되었을 것이다.
+            log.error("데몬이 준비되지 않아 구독 요청을 보낼 수 없습니다: {}", channelId);
             return false;
         }
         try {

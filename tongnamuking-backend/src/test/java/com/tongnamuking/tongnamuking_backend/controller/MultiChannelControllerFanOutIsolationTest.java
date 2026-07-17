@@ -49,6 +49,8 @@ class MultiChannelControllerFanOutIsolationTest {
     private final String healthyClientA = "client-A-" + UUID.randomUUID();
     private final String brokenClientB = "client-B-" + UUID.randomUUID();
     private final String healthyClientC = "client-C-" + UUID.randomUUID();
+    private final String earlySubscriber = "early-" + UUID.randomUUID();
+    private final String lateSubscriber = "late-" + UUID.randomUUID();
 
     private String rankKey(String clientId) {
         return "chat:rank:" + clientId + ":" + channelName;
@@ -60,8 +62,10 @@ class MultiChannelControllerFanOutIsolationTest {
         registry.remove(channelName, healthyClientA);
         registry.remove(channelName, brokenClientB);
         registry.remove(channelName, healthyClientC);
+        registry.remove(channelName, earlySubscriber);
+        registry.remove(channelName, lateSubscriber);
 
-        for (String clientId : Set.of(healthyClientA, brokenClientB, healthyClientC)) {
+        for (String clientId : Set.of(healthyClientA, brokenClientB, healthyClientC, earlySubscriber, lateSubscriber)) {
             redisTemplate.delete(rankKey(clientId));
             Set<String> bucketKeys = redisTemplate.keys(rankKey(clientId) + ":b:*");
             if (bucketKeys != null && !bucketKeys.isEmpty()) {
@@ -105,5 +109,58 @@ class MultiChannelControllerFanOutIsolationTest {
         // brokenClientB의 키는 여전히 String 타입 그대로다 (증분은 실패했고, 예외는 격리되어
         // 팬아웃 자체를 막지 않았다).
         assertThat(redisTemplate.type(rankKey(brokenClientB)).name()).isEqualTo("STRING");
+    }
+
+    /**
+     * 랭킹 키는 {@code chat:rank:{clientId}:{channelName}} — 클라이언트별로 하나이며,
+     * 그 클라이언트가 구독한 "이후"에 도착한 채팅만 집계해야 한다.
+     *
+     * 이 성질은 두 가지 사실 위에 서 있다: (1) 팬아웃은 채팅이 도착한 시점에
+     * {@code ChannelSubscriptionRegistry}의 현재 구독자 집합을 조회하므로, 구독 전에 지나간
+     * 채팅은 그 클라이언트를 대상 목록에 넣지 않는다. (2) 구독은 레지스트리만 건드리고
+     * Redis는 절대 건드리지 않으므로(랭킹 키는 구독 후 첫 ZINCRBY가 올 때 비로소 lazy하게
+     * 생긴다), 늦게 들어온 클라이언트의 키는 그 전까지 아예 존재하지 않는다.
+     *
+     * 이 성질이 깨지면 예외 없이 그냥 숫자가 틀리게 나온다 — 그래서 명시적으로 검증해 둔다.
+     */
+    @Test
+    void 늦게_구독한_클라이언트는_구독_이전_채팅을_집계하지_않는다() {
+        // 이른 구독자만 채널에 있다.
+        registry.add(channelName, earlySubscriber);
+
+        ChatMessageRequest request = new ChatMessageRequest();
+        request.setChannelId(channelName);
+        request.setChannelName(channelName);
+        request.setUsername("late-join-chatter");
+
+        // 늦은 구독자가 들어오기 전에 채팅 3건이 도착한다.
+        for (int i = 0; i < 3; i++) {
+            ResponseEntity<String> response = controller.addMultiChannelMessage(request);
+            assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        }
+
+        // 아직 구독하지 않은 클라이언트의 랭킹 키는 존재조차 하면 안 된다 — 구독이 Redis를
+        // 건드리지 않는다는 것과, 팬아웃이 구독 이전 채팅을 그 클라이언트에게 소급 적용하지
+        // 않는다는 것을 함께 증명한다.
+        assertThat(redisTemplate.hasKey(rankKey(lateSubscriber)))
+                .as("구독 전에는 랭킹 키가 아예 존재하지 않아야 한다")
+                .isFalse();
+
+        // 늦은 구독자가 이제 들어온다 (레지스트리만 갱신, Redis는 여전히 손대지 않는다).
+        registry.add(channelName, lateSubscriber);
+
+        // 구독 이후 채팅 1건이 도착한다.
+        ResponseEntity<String> lateResponse = controller.addMultiChannelMessage(request);
+        assertThat(lateResponse.getStatusCode().is2xxSuccessful()).isTrue();
+
+        Double earlyScore = redisTemplate.opsForZSet().score(rankKey(earlySubscriber), "late-join-chatter");
+        Double lateScore = redisTemplate.opsForZSet().score(rankKey(lateSubscriber), "late-join-chatter");
+
+        assertThat(earlyScore)
+                .as("구독 시점부터 계속 있던 클라이언트는 4건(구독 전 3건 + 구독 후 1건) 모두 집계되어야 한다")
+                .isEqualTo(4.0);
+        assertThat(lateScore)
+                .as("늦게 구독한 클라이언트는 자신이 구독한 이후의 채팅 1건만 집계되어야 한다")
+                .isEqualTo(1.0);
     }
 }
