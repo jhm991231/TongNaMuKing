@@ -113,6 +113,62 @@ class MultiChannelCollectionServiceTest {
         assertThat(daemonManager.subscribeCalls()).containsExactly("channel-1", "channel-1");
     }
 
+    /**
+     * finding 1의 두 번째 시나리오 (stop이 start와 경합하는 경우):
+     * 채널의 마지막 구독자 A가 나가는 stopCollection이 registry.remove()로 "마지막 구독자"라고
+     * 판정한 뒤 데몬 해제(unsubscribe) HTTP 호출 중(블로킹)일 때, 새 구독자 B가 같은 채널에
+     * 들어오면 B는 A의 stopCollection이 완전히 끝날 때까지 대기해야 한다. 그래야 B가 registry를
+     * 볼 때는 이미 비어 있는 상태이므로 스스로를 새로운 첫 구독자로 올바르게 판정해 데몬을
+     * 직접 재구독한다. 만약 stop이 채널 락 없이 진행된다면(수정 전 상태), A의 registry.remove()가
+     * 끝난 직후 A의 unsubscribe() 호출이 아직 데몬에 도달하기 전에 B의 registry.add()가 먼저
+     * 실행되어 "첫 구독자"로 판정되고 곧바로 daemonManager.subscribe()를 호출할 수 있다 — 이후 두
+     * HTTP 호출(A의 DELETE, B의 POST)의 도착 순서가 뒤바뀌면, registry에는 B가 구독자로 남아
+     * 있지만 데몬 커넥션은 없는 유령 상태가 재현된다.
+     */
+    @Test
+    void 정지가_시작과_경합해도_유령_구독자를_남기지_않는다() throws Exception {
+        // 채널에 client-A만 구독 중인 상태를 만든다 (데몬 구독 1회 완료).
+        assertThat(service.startCollection("client-A", "channel-1")).isTrue();
+        assertThat(daemonManager.subscribeCalls()).containsExactly("channel-1");
+
+        CountDownLatch enteredUnsubscribe = new CountDownLatch(1);
+        CountDownLatch releaseUnsubscribe = new CountDownLatch(1);
+
+        daemonManager.setUnsubscribeBehavior(channelId -> {
+            // A: 데몬 해제 요청이 진행 중인 상태를 흉내낸다 (동기 HTTP 호출).
+            enteredUnsubscribe.countDown();
+            awaitQuietly(releaseUnsubscribe);
+        });
+
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            Future<Boolean> resultStop = pool.submit(() -> service.stopCollection("client-A", "channel-1"));
+            assertThat(enteredUnsubscribe.await(5, TimeUnit.SECONDS)).isTrue();
+
+            // A의 registry.remove()는 이미 끝났고(레지스트리는 비어 있음), unsubscribe() HTTP 호출만
+            // 블로킹 중인 시점이다. 채널 락이 stop도 직렬화한다면 B는 여기서 진행되면 안 된다.
+            Future<Boolean> resultStart = pool.submit(() -> service.startCollection("client-B", "channel-1"));
+            Thread.sleep(300);
+            assertThat(resultStart.isDone())
+                    .as("stop이 채널 락을 쥐고 있는 동안 start는 진행되면 안 된다")
+                    .isFalse();
+
+            releaseUnsubscribe.countDown();
+
+            assertThat(resultStop.get(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(resultStart.get(5, TimeUnit.SECONDS)).isTrue();
+        } finally {
+            pool.shutdown();
+        }
+
+        // 핵심 불변식: registry에 구독자가 있다면 반드시 데몬에도 구독이 걸려 있어야 한다.
+        // B는 A의 stop이 완전히 끝난 뒤에야 진행되었으므로 스스로 새 첫 구독자로 판정되어
+        // 데몬 subscribe를 다시(두 번째로) 호출했어야 한다.
+        assertThat(registry.getSubscribers("channel-1")).containsExactly("client-B");
+        assertThat(daemonManager.subscribeCalls()).containsExactly("channel-1", "channel-1");
+        assertThat(daemonManager.unsubscribeCalls()).containsExactly("channel-1");
+    }
+
     @Test
     void 서로_다른_채널은_서로_대기시키지_않는다() throws Exception {
         CountDownLatch channel1Entered = new CountDownLatch(1);
@@ -184,6 +240,8 @@ class MultiChannelCollectionServiceTest {
         private final List<String> subscribeCalls = Collections.synchronizedList(new ArrayList<>());
         private final List<String> unsubscribeCalls = Collections.synchronizedList(new ArrayList<>());
         private volatile Function<String, Boolean> subscribeBehavior = channelId -> true;
+        private volatile java.util.function.Consumer<String> unsubscribeBehavior = channelId -> {
+        };
 
         FakeCollectorDaemonManager() {
             super(null);
@@ -191,6 +249,10 @@ class MultiChannelCollectionServiceTest {
 
         void setSubscribeBehavior(Function<String, Boolean> behavior) {
             this.subscribeBehavior = behavior;
+        }
+
+        void setUnsubscribeBehavior(java.util.function.Consumer<String> behavior) {
+            this.unsubscribeBehavior = behavior;
         }
 
         List<String> subscribeCalls() {
@@ -210,6 +272,7 @@ class MultiChannelCollectionServiceTest {
         @Override
         public void unsubscribe(String channelId) {
             unsubscribeCalls.add(channelId);
+            unsubscribeBehavior.accept(channelId);
         }
     }
 }

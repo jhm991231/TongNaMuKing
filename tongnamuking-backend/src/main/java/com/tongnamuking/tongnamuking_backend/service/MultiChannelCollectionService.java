@@ -32,15 +32,24 @@ public class MultiChannelCollectionService {
     private final Map<String, Long> clientLastActivity = new ConcurrentHashMap<>();
 
     /**
-     * 채널별 startCollection 직렬화 락.
+     * 채널별 startCollection/stopCollection 직렬화 락.
      *
-     * registry.add()로 "첫 구독자인지" 판정하는 것과, 그 판정에 따라 데몬에
-     * 실제로 구독을 거는 것(~1초 걸리는 동기 HTTP 호출) 사이에는 시간차가 있다.
+     * registry.add()/remove()로 "첫 구독자/마지막 구독자인지" 판정하는 것과, 그 판정에 따라
+     * 데몬에 실제로 구독을 걸거나 해제하는 것(동기 HTTP 호출) 사이에는 시간차가 있다.
      * 이 둘을 하나의 원자적 단위로 묶지 않으면, A가 첫 구독자로 판정되어 데몬 호출을
      * 기다리는 동안 B가 같은 채널에 들어와 "이미 구독자가 있다"고 잘못 판정받고
      * 데몬 호출 없이 바로 성공 처리된다. 이후 A의 데몬 구독이 실패해 롤백되면,
      * B는 "구독자는 있으나 데몬 커넥션은 없는" 유령 상태로 남아 그 채널은 아무도
      * 모르게 0건만 집계하게 된다.
+     *
+     * start만 직렬화하고 stop을 직렬화하지 않으면 같은 유령 상태가 다른 경로로 재현된다:
+     * 마지막 구독자 A의 stopCollection이 registry.remove()로 "마지막 구독자"라고 판정하고
+     * 데몬 해제(DELETE) 호출을 준비하는 동안, 새 구독자 B의 startCollection이 (락이 없으므로)
+     * 곧바로 registry.add()를 실행해 "첫 구독자"로 판정되어 데몬 구독(POST) 호출을 보낼 수 있다.
+     * 두 HTTP 호출의 도착 순서는 보장되지 않으므로 DELETE가 POST보다 늦게 도착하면, 레지스트리에는
+     * B가 구독자로 남아 있지만 데몬 커넥션은 없는 상태가 된다. stop도 동일한 채널 락으로
+     * 직렬화해, registry 변경과 그에 따른 데몬 호출이 start/stop을 가리지 않고 채널 단위로
+     * 항상 하나씩만 진행되도록 한다.
      *
      * 채널마다 별도의 락을 두어 서로 다른 채널끼리는 절대 경합하지 않게 하고,
      * 참조 카운트로 사용자가 없어진 락 엔트리는 즉시 맵에서 제거해 맵이
@@ -118,6 +127,15 @@ public class MultiChannelCollectionService {
     }
 
     public boolean stopCollection(String clientId, String channelId) {
+        ChannelLock channelLock = acquireChannelLock(channelId);
+        try {
+            return doStopCollection(clientId, channelId);
+        } finally {
+            releaseChannelLock(channelId, channelLock);
+        }
+    }
+
+    private boolean doStopCollection(String clientId, String channelId) {
         if (!registry.isSubscribed(channelId, clientId)) {
             log.warn("클라이언트 {}에서 채널 {}은 수집 중이 아닙니다.", clientId, channelId);
             return false;
