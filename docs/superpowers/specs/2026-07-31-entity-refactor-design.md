@@ -146,7 +146,21 @@ if (nowLive != channel.isLive()) {
 서비스에 남는 책임은 넷이다 — 치지직 API 호출, 변화 감지, 분기, 저장.
 
 `wasLive` 지역 변수와 `isCurrentlyLive && !wasLive` 형태의 조건은 삭제한다. 바깥
-`if`에서 두 값이 다르다는 것이 이미 판명되므로 항상 참인 조건이다. 32줄이 11줄이 된다.
+`if`에서 두 값이 다르다는 것이 이미 판명되므로 항상 참인 조건이다. 32줄이 19줄이 된다.
+
+### 4.5 `ChatStatsService` — 같은 null 방어 두 곳 정리
+
+`getIsCurrentlyLive() != null && ...` 형태의 방어가 `ChatStatsService:362,384`에도 있다.
+`isLive()`가 그 역할을 대신하므로 함께 정리한다. (작업 중 발견해 범위에 추가했다.)
+
+- **362행** `!= null && getIsCurrentlyLive()` → `isLive()`.
+  둘 다 "명시적으로 true일 때만 참"이라 의미가 완전히 같다.
+- **384행** `!= null && !getIsCurrentlyLive()` → `!isLive()`.
+  **null 처리가 달라진다.** 기존 코드에서 null은 조건을 통과하지 못해 "방송 중" 분기로
+  흘러가 30분 버퍼가 붙지 않았다. `isLive()`는 null을 false로 뭉개므로 `!isLive()`는
+  참이 되어 버퍼가 붙는다. 최종적으로 조회 기준 시각이 자정에서 방송 시작 시각으로
+  바뀌므로 통계 값이 달라질 수 있는 변경이다.
+  `channels.is_currently_live`가 NULL인 행이 없음을 확인한 뒤 바꿨다(2026-08-01).
 
 ## 5. 결정 사항
 
@@ -157,6 +171,7 @@ if (nowLive != channel.isLive()) {
 | 현재 시각 | 메서드 파라미터로 주입 | 30분 경계를 테스트하기 위해 |
 | DTO의 `@Data` | 유지 | DTO는 영속성 생명주기·지연 로딩·식별자가 없어 문제가 생기지 않는다 |
 | 브랜치 | `refactor/entity` | 엔티티 4개와 서비스 3개를 동시에 건드리므로, 실패 시 브랜치를 버릴 수 있게 한다 |
+| 테스트에서 `id` 지정 | `ReflectionTestUtils.setField` | `ChatStatsServiceTest` 의 목 스터빙이 채널 id 를 키로 쓰므로 id 가 필요하다. 빌더에 `id` 를 추가하면 운영 코드에서도 지정할 수 있게 되는데, id 가 채워진 엔티티를 `save()` 하면 Spring Data JPA 가 INSERT 대신 `merge()`(SELECT 후 UPDATE)로 동작한다. 운영 코드의 제약을 유지하고 테스트에서만 리플렉션으로 우회한다 |
 
 ## 6. 테스트 전략
 
@@ -179,13 +194,14 @@ if (nowLive != channel.isLive()) {
 
 안전망이 얇으므로(§2) 도메인 로직을 먼저 테스트로 고정한 뒤 껍데기를 바꾼다.
 
-1. `refactor/entity` 브랜치 생성
-2. `ChannelTest` 작성 → 실패 확인 → `Channel`에 도메인 메서드 추가 → 통과
-   *이 단계에서는 `@Data`가 아직 살아 있어 기존 코드가 깨지지 않는다*
-3. `ChzzkService`를 새 메서드를 쓰도록 변경
-4. 엔티티 4개에서 `@Data` 제거, `@Getter`/`@Builder`로 교체
-5. 깨진 세터 호출부 21곳을 빌더로 전환 (컴파일러가 하나씩 안내)
-6. 전체 빌드 + 테스트 확인
+- [x] 1. `refactor/entity` 브랜치 생성
+- [x] 2. `ChannelTest` 작성 → 실패 확인 → `Channel`에 도메인 메서드 추가 → 통과
+  *이 단계에서는 `@Data`가 아직 살아 있어 기존 코드가 깨지지 않는다*
+- [x] 3. `ChzzkService`를 새 메서드를 쓰도록 변경 (작업 중 `ChatStatsService`도 포함 — §4.5)
+- [x] 4. 엔티티 4개에서 `@Data` 제거, `@Getter`/`@Builder`로 교체
+- [x] 5. 깨진 세터 호출부를 빌더로 전환
+  *`src/main` 21곳 외에 `ChatStatsServiceTest` 4곳이 더 있었다. 최종적으로 프로젝트 전체 세터 호출 0개*
+- [x] 6. 전체 빌드 + 테스트 확인 — 15개 통과 (2026-08-01)
 
 2번을 먼저 하는 것이 핵심이다. 5번에서 무언가 깨져도 2번의 테스트가 방송 상태 규칙을
 지켜준다. 순서를 뒤집으면 안전망 없이 큰 수술을 하게 된다.
