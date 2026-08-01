@@ -359,7 +359,7 @@ public class ChatStatsService {
     private LocalDateTime getBroadcastStartTime(Channel channel) {
         if ("독케익".equals(channel.getChannelName()) && channel.getLiveStartTime() != null) {
             // 방송이 진행 중이면 방송 시작 시간부터, 아니면 방송 종료 후 30분까지 포함
-            if (channel.getIsCurrentlyLive() != null && channel.getIsCurrentlyLive()) {
+            if (channel.isLive()) {
                 return channel.getLiveStartTime();
             } else {
                 // 방송 종료 후 30분 버퍼를 고려하여 계산
@@ -381,7 +381,7 @@ public class ChatStatsService {
         }
 
         LocalDateTime endTime = LocalDateTime.now();
-        if (channel.getIsCurrentlyLive() != null && !channel.getIsCurrentlyLive()) {
+        if (!channel.isLive()) {
             // 방송이 끝났으면 30분 버퍼 추가
             long broadcastMinutes = java.time.Duration.between(channel.getLiveStartTime(), endTime).toMinutes();
             return broadcastMinutes + 30; // 30분 버퍼
