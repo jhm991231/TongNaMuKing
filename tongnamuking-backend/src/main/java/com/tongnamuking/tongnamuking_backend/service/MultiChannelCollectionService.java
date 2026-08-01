@@ -1,212 +1,204 @@
 package com.tongnamuking.tongnamuking_backend.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.scheduling.annotation.Scheduled;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * 멀티채널 수집 조율.
+ *
+ * 프로세스를 직접 띄우지 않는다. 구독자 관리는 ChannelSubscriptionRegistry가,
+ * 수집기 데몬 제어는 CollectorDaemonManager가 담당하고 여기서는 둘을 엮기만 한다.
+ *
+ * 채널의 첫 구독자가 들어올 때만 데몬에 구독을 걸고,
+ * 마지막 구독자가 빠질 때만 해제한다.
+ */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class MultiChannelCollectionService {
 
-    // 클라이언트별 수집기 관리: sessionId -> (channelId -> Process)
-    private final Map<String, Map<String, Process>> userCollections = new ConcurrentHashMap<>();
+    private final ChannelSubscriptionRegistry registry;
+    private final CollectorDaemonManager daemonManager;
 
-    // 클라이언트별 마지막 활동 시간 (핑 기반)
+    /** 클라이언트별 마지막 활동 시간 (핑 기반) */
     private final Map<String, Long> clientLastActivity = new ConcurrentHashMap<>();
 
-    private final int MAX_COLLECTORS_PER_USER = 3;
+    /**
+     * 채널별 startCollection/stopCollection 직렬화 락.
+     *
+     * registry.add()/remove()로 "첫 구독자/마지막 구독자인지" 판정하는 것과, 그 판정에 따라
+     * 데몬에 실제로 구독을 걸거나 해제하는 것(동기 HTTP 호출) 사이에는 시간차가 있다.
+     * 이 둘을 하나의 원자적 단위로 묶지 않으면, A가 첫 구독자로 판정되어 데몬 호출을
+     * 기다리는 동안 B가 같은 채널에 들어와 "이미 구독자가 있다"고 잘못 판정받고
+     * 데몬 호출 없이 바로 성공 처리된다. 이후 A의 데몬 구독이 실패해 롤백되면,
+     * B는 "구독자는 있으나 데몬 커넥션은 없는" 유령 상태로 남아 그 채널은 아무도
+     * 모르게 0건만 집계하게 된다.
+     *
+     * start만 직렬화하고 stop을 직렬화하지 않으면 같은 유령 상태가 다른 경로로 재현된다:
+     * 마지막 구독자 A의 stopCollection이 registry.remove()로 "마지막 구독자"라고 판정하고
+     * 데몬 해제(DELETE) 호출을 준비하는 동안, 새 구독자 B의 startCollection이 (락이 없으므로)
+     * 곧바로 registry.add()를 실행해 "첫 구독자"로 판정되어 데몬 구독(POST) 호출을 보낼 수 있다.
+     * 두 HTTP 호출의 도착 순서는 보장되지 않으므로 DELETE가 POST보다 늦게 도착하면, 레지스트리에는
+     * B가 구독자로 남아 있지만 데몬 커넥션은 없는 상태가 된다. stop도 동일한 채널 락으로
+     * 직렬화해, registry 변경과 그에 따른 데몬 호출이 start/stop을 가리지 않고 채널 단위로
+     * 항상 하나씩만 진행되도록 한다.
+     *
+     * 채널마다 별도의 락을 두어 서로 다른 채널끼리는 절대 경합하지 않게 하고,
+     * 참조 카운트로 사용자가 없어진 락 엔트리는 즉시 맵에서 제거해 맵이
+     * 무한정 커지지 않게 한다 (동시에 사용 중인 채널 수만큼만 유지된다).
+     */
+    private final Map<String, ChannelLock> channelLocks = new ConcurrentHashMap<>();
+
+    private static final class ChannelLock {
+        private final ReentrantLock lock = new ReentrantLock();
+        private final AtomicInteger refCount = new AtomicInteger(0);
+    }
+
+    private ChannelLock acquireChannelLock(String channelId) {
+        ChannelLock channelLock = channelLocks.compute(channelId, (key, existing) -> {
+            ChannelLock target = existing != null ? existing : new ChannelLock();
+            target.refCount.incrementAndGet();
+            return target;
+        });
+        channelLock.lock.lock();
+        return channelLock;
+    }
+
+    private void releaseChannelLock(String channelId, ChannelLock channelLock) {
+        channelLock.lock.unlock();
+        channelLocks.compute(channelId, (key, current) -> {
+            if (current == channelLock && channelLock.refCount.decrementAndGet() == 0) {
+                return null;
+            }
+            return current;
+        });
+    }
 
     public boolean startCollection(String clientId, String channelId) {
+        ChannelLock channelLock = acquireChannelLock(channelId);
+        try {
+            return doStartCollection(clientId, channelId);
+        } finally {
+            releaseChannelLock(channelId, channelLock);
+        }
+    }
 
-        // 사용자별 수집기 맵 가져오기 또는 생성
-        Map<String, Process> userChannels = userCollections.computeIfAbsent(clientId, k -> new ConcurrentHashMap<>());
-
-        // 이미 해당 사용자가 해당 채널을 수집 중인지 확인
-        if (userChannels.containsKey(channelId)) {
+    private boolean doStartCollection(String clientId, String channelId) {
+        if (registry.isSubscribed(channelId, clientId)) {
             log.warn("클라이언트 {}에서 이미 수집 중인 채널입니다: {}", clientId, channelId);
             return false;
         }
 
-        // 사용자별 최대 수집기 수 확인
-        if (userChannels.size() >= MAX_COLLECTORS_PER_USER) {
+        if (registry.countChannelsOf(clientId) >= registry.getMaxChannelsPerClient()) {
             log.warn("클라이언트 {}의 최대 수집기 수({})에 도달했습니다. 현재 수집 중인 채널: {}",
-                    clientId, MAX_COLLECTORS_PER_USER, userChannels.keySet());
+                    clientId, registry.getMaxChannelsPerClient(), registry.getChannelsOf(clientId));
             return false;
         }
 
-        try {
-            log.info("멀티채널 수집 시작: {} (클라이언트: {}, 현재 활성 수집기: {})",
-                    channelId, clientId, userChannels.size());
+        boolean isFirstSubscriber = registry.add(channelId, clientId);
+        log.info("멀티채널 수집 시작: {} (클라이언트: {}, 첫 구독자: {})", channelId, clientId, isFirstSubscriber);
 
-            // Node.js 채팅 수집기 실행
-            ProcessBuilder processBuilder = new ProcessBuilder();
-
-            // 개발/운영 환경에 따른 경로 설정
-            String os = System.getProperty("os.name").toLowerCase();
-            String nodeCommand = "node"; // PATH에서 node 찾기
-            String scriptPath = os.contains("win")
-                    ? "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing\\chat-collector\\index.js"
-                    : "/app/chat-collector/index.js";
-            String workingDir = os.contains("win") ? "C:\\Users\\jhm99\\vscode_workspace\\TongNaMuKing" : "/app";
-
-            processBuilder.command(nodeCommand, scriptPath, channelId, clientId);
-            processBuilder.directory(new java.io.File(workingDir));
-            processBuilder.redirectErrorStream(true);
-
-            Process process = processBuilder.start();
-            userChannels.put(channelId, process);
-
-            // 클라이언트 마지막 활동 시간 갱신
+        if (!isFirstSubscriber) {
+            // 이미 데몬이 해당 채널에 붙어 있다. 팬아웃 대상만 늘어난다.
             clientLastActivity.put(clientId, System.currentTimeMillis());
-
-            // 비동기로 프로세스 출력 로깅
-            CompletableFuture.runAsync(() -> {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        log.info("[MultiChannel-{}] {}", channelId.substring(0, 8), line);
-                    }
-                } catch (IOException e) {
-                    log.error("채널 {} 수집기 출력 읽기 실패", channelId, e);
-                }
-            });
-
-            // 프로세스 종료 감지
-            CompletableFuture.runAsync(() -> {
-                try {
-                    int exitCode = process.waitFor();
-                    log.info("멀티채널 {} 수집기 종료됨. Exit code: {}", channelId, exitCode);
-                    userChannels.remove(channelId);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.error("채널 {} 프로세스 대기 중 인터럽트", channelId, e);
-                    userChannels.remove(channelId);
-                }
-            });
-
             return true;
+        }
 
-        } catch (IOException e) {
-            log.error("채널 {} 수집 시작 실패", channelId, e);
-            userChannels.remove(channelId);
+        boolean subscribed = daemonManager.subscribe(channelId);
+        if (!subscribed) {
+            // 롤백하지 않으면 "구독자는 있으나 커넥션은 없는" 유령 상태가 된다.
+            // 이후 다른 클라이언트가 구독해도 첫 구독자가 아니라고 판정되어
+            // 데몬을 호출하지 않으므로, 그 채널의 모든 구독자가 조용히 0건을 집계하게 된다.
+            registry.remove(channelId, clientId);
+            log.error("데몬 구독 실패로 롤백: {} (클라이언트: {})", channelId, clientId);
             return false;
         }
+
+        clientLastActivity.put(clientId, System.currentTimeMillis());
+        return true;
     }
 
     public boolean stopCollection(String clientId, String channelId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        if (userChannels == null) {
-            log.warn("클라이언트 {}에 수집기가 없습니다.", clientId);
-            return false;
+        ChannelLock channelLock = acquireChannelLock(channelId);
+        try {
+            return doStopCollection(clientId, channelId);
+        } finally {
+            releaseChannelLock(channelId, channelLock);
         }
+    }
 
-        Process process = userChannels.get(channelId);
-        if (process == null) {
+    private boolean doStopCollection(String clientId, String channelId) {
+        if (!registry.isSubscribed(channelId, clientId)) {
             log.warn("클라이언트 {}에서 채널 {}은 수집 중이 아닙니다.", clientId, channelId);
             return false;
         }
 
-        try {
-            if (process.isAlive()) {
-                long pid = process.pid();
-                log.info("채널 {} 프로세스 종료 시작 (PID: {})", channelId, pid);
-
-                // Java 기본 프로세스 종료 사용 (크로스 플랫폼 호환)
-                log.info("Java 기본 방법으로 프로세스 {} 강제 종료", pid);
-                process.destroyForcibly();
-
-                // 프로세스 종료 대기 (최대 5초)
-                boolean terminated = process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
-                if (terminated) {
-                    log.info("채널 {} 프로세스 정상 종료됨", channelId);
-                } else {
-                    log.warn("채널 {} 프로세스 종료 타임아웃 (5초)", channelId);
-                }
-
-                log.info("멀티채널 {} 수집 중지됨 (클라이언트: {})", channelId, clientId);
-            }
-
-            userChannels.remove(channelId);
-            return true;
-
-        } catch (Exception e) {
-            log.error("채널 {} 프로세스 종료 중 오류", channelId, e);
-            userChannels.remove(channelId);
-            return false;
+        boolean wasLastSubscriber = registry.remove(channelId, clientId);
+        if (wasLastSubscriber) {
+            daemonManager.unsubscribe(channelId);
+            log.info("마지막 구독자 이탈로 채널 해제: {}", channelId);
         }
+
+        log.info("멀티채널 {} 수집 중지됨 (클라이언트: {})", channelId, clientId);
+        return true;
     }
 
     public boolean stopAllCollections(String clientId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        if (userChannels == null || userChannels.isEmpty()) {
-            return true;
+        for (String channelId : registry.getChannelsOf(clientId)) {
+            stopCollection(clientId, channelId);
         }
-
-        boolean allStopped = true;
-        for (String channelId : Set.copyOf(userChannels.keySet())) {
-            if (!stopCollection(clientId, channelId)) {
-                allStopped = false;
-            }
-        }
-        return allStopped;
+        return true;
     }
 
     public boolean isCollecting(String clientId, String channelId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        return userChannels != null && userChannels.containsKey(channelId);
+        return registry.isSubscribed(channelId, clientId);
     }
 
     public boolean isAnyCollecting(String clientId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        return userChannels != null && !userChannels.isEmpty();
+        return registry.countChannelsOf(clientId) > 0;
     }
 
     public Set<String> getActiveChannels(String clientId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        return userChannels != null ? Set.copyOf(userChannels.keySet()) : new HashSet<>();
+        return registry.getChannelsOf(clientId);
     }
 
     public int getActiveCollectorCount(String clientId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        return userChannels != null ? userChannels.size() : 0;
+        return registry.countChannelsOf(clientId);
     }
 
     public int getMaxCollectors() {
-        return MAX_COLLECTORS_PER_USER;
+        return registry.getMaxChannelsPerClient();
     }
 
     public String getStatus(String clientId) {
-        Map<String, Process> userChannels = userCollections.get(clientId);
-        if (userChannels == null || userChannels.isEmpty()) {
+        Set<String> channels = registry.getChannelsOf(clientId);
+        if (channels.isEmpty()) {
             return "수집 중인 채널 없음";
-        } else {
-            return String.format("수집 중인 채널: %d/%d - %s",
-                    userChannels.size(), MAX_COLLECTORS_PER_USER, userChannels.keySet());
         }
+        return String.format("수집 중인 채널: %d/%d - %s",
+                channels.size(), registry.getMaxChannelsPerClient(), channels);
     }
 
     /**
      * 세션 활동 시간 업데이트 (핑 수신시 호출)
      */
     public void updateClientActivity(String clientId) {
-        if (userCollections.containsKey(clientId)) {
+        if (registry.countChannelsOf(clientId) > 0) {
             clientLastActivity.put(clientId, System.currentTimeMillis());
             log.debug("클라이언트 활동 업데이트: {}", clientId);
         }
     }
 
     /**
-     * 30초마다 비활성 세션의 chat-collector 정리
+     * 30초마다 비활성 클라이언트의 구독 정리
      */
     @Scheduled(fixedRate = 30000)
     public void cleanupInactiveCilents() {
@@ -219,16 +211,10 @@ public class MultiChannelCollectionService {
 
             if (currentTime - lastActivity > inactiveThreshold) {
                 log.info("비활성 클라이언트 정리: {} ({}분 비활성)", clientId, (currentTime - lastActivity) / 60000);
-
-                // 해당 클라이언트의 모든 chat-collector 종료
                 stopAllCollections(clientId);
-
-                // 클라이언트 데이터 정리
-                userCollections.remove(clientId);
-
-                return true; // Map에서 제거
+                return true;
             }
-            return false; // 유지
+            return false;
         });
     }
 }

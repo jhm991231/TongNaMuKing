@@ -4,6 +4,7 @@ import com.tongnamuking.tongnamuking_backend.dto.ChatMessageRequest;
 import com.tongnamuking.tongnamuking_backend.service.MultiChannelCollectionService;
 import com.tongnamuking.tongnamuking_backend.service.ChatRankingService;
 import com.tongnamuking.tongnamuking_backend.service.ClientIdentifierService;
+import com.tongnamuking.tongnamuking_backend.service.ChannelSubscriptionRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/multi-channel-collection")
@@ -27,6 +29,7 @@ public class MultiChannelController {
         private final MultiChannelCollectionService multiChannelCollectionService;
         private final ChatRankingService chatRankingService;
         private final ClientIdentifierService clientIdentifierService;
+        private final ChannelSubscriptionRegistry channelSubscriptionRegistry;
 
         @PostMapping("/start/{channelId}")
         @Operation(summary = "채널 채팅 수집 시작", description = "지정된 채널의 실시간 채팅 수집을 시작합니다.")
@@ -112,24 +115,44 @@ public class MultiChannelController {
                                 "status", multiChannelCollectionService.getStatus(clientId)));
         }
 
-        // chat-collector가 호출하는 API
+        // chat-collector 데몬이 호출하는 API. 데몬은 clientId를 모르므로 구독자는 여기서 찾는다.
         @PostMapping("/message/from-collector")
-        @Operation(summary = "멀티채널 채팅 메시지 수신", description = "멀티채널 chat-collector로부터 채팅 메시지를 수신하여 Redis 순위에 반영합니다.")
+        @Operation(summary = "멀티채널 채팅 메시지 수신", description = "멀티채널 수집기 데몬으로부터 채팅 메시지를 수신하여 구독 중인 모든 클라이언트의 Redis 순위에 반영합니다.")
         public ResponseEntity<String> addMultiChannelMessage(@RequestBody ChatMessageRequest request) {
                 try {
                         // channelName이 있으면 사용하고, 없으면 channelId 사용
                         String channelName = request.getChannelName() != null ? request.getChannelName()
                                         : request.getChannelId();
 
-                        log.debug("멀티채널 채팅 수신 - 채널: {}, 사용자: {}, 메시지: {}, 클라이언트: {}",
-                                        channelName, request.getUsername(), request.getMessage(),
-                                        request.getClientId());
+                        Set<String> subscribers = channelSubscriptionRegistry
+                                        .getSubscribers(request.getChannelId());
 
-                        // Redis 순위 갱신 (전체 순위 + 1분 버킷)
-                        chatRankingService.incrementScore(
-                                        request.getClientId(),
-                                        channelName,
-                                        request.getUsername());
+                        if (subscribers.isEmpty()) {
+                                // 해제 요청과 채팅 수신이 교차한 경우. 버리는 것이 맞다.
+                                log.debug("구독자가 없는 채널의 채팅 수신, 무시: {}", channelName);
+                                return ResponseEntity.ok("No subscribers");
+                        }
+
+                        log.debug("멀티채널 채팅 수신 - 채널: {}, 사용자: {}, 구독자 {}명",
+                                        channelName, request.getUsername(), subscribers.size());
+
+                        // 구독 중인 모든 클라이언트의 순위에 반영 (전체 순위 + 1분 버킷)
+                        // 클라이언트 하나씩 격리해서 처리한다. incrementScore는 Redis 쓰기를 두 번 하는데,
+                        // 격리 없이 순회하다 한 클라이언트에서 예외(예: 일시적 Redis 오류)가 나면
+                        // 그 시점에 루프 전체가 중단되어 반복 순서상 뒤에 있던 나머지 구독자들은
+                        // 이번 채팅을 영구히 놓친다. 데몬의 postToBackend는 fire-and-forget이라
+                        // 재시도도 없으므로, 여기서 막지 않으면 복구할 방법이 없다.
+                        for (String clientId : subscribers) {
+                                try {
+                                        chatRankingService.incrementScore(
+                                                        clientId,
+                                                        channelName,
+                                                        request.getUsername());
+                                } catch (Exception e) {
+                                        log.error("멀티채널 순위 반영 실패 - 클라이언트: {}, 채널: {}, 사용자: {}",
+                                                        clientId, channelName, request.getUsername(), e);
+                                }
+                        }
 
                         return ResponseEntity.ok("Multi-channel chat message counted in Redis");
 
