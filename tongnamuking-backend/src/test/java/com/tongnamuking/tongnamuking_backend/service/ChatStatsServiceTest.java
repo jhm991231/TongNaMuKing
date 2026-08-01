@@ -15,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -68,12 +69,22 @@ class ChatStatsServiceTest {
      */
     private static final LocalDateTime STREAM_START = LocalDateTime.of(2026, 7, 29, 20, 0);
 
+    /**
+     * STREAM_START 에 시작해 지금도 방송 중인 독케익 채널.
+     *
+     * <p>id 는 빌더로 넣을 수 없다. DB 가 매기는 값(@GeneratedValue)이라 운영 코드에서
+     * 지정하면 save() 가 INSERT 대신 UPDATE 로 동작하는 사고가 나기 때문이다.
+     * 그 제약을 테스트 편의로 풀어주는 대신, 여기서만 리플렉션으로 우회한다.
+     *
+     * <p>방송 상태도 세터가 없다. startLive() 를 부르면 isCurrentlyLive 와 liveStartTime 이
+     * 함께 맞춰지므로 운영 코드와 같은 경로로 상태를 만든다.
+     */
     private Channel 독케익채널() {
-        Channel channel = new Channel();
-        channel.setId(CHANNEL_ID);
-        channel.setChannelName(CHANNEL);
-        channel.setLiveStartTime(STREAM_START);
-        channel.setIsCurrentlyLive(true);
+        Channel channel = Channel.builder()
+                .channelName(CHANNEL)
+                .build();
+        ReflectionTestUtils.setField(channel, "id", CHANNEL_ID);
+        channel.startLive(STREAM_START);
         return channel;
     }
 

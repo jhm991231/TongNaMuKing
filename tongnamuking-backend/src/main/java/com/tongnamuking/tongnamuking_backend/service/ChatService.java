@@ -25,31 +25,27 @@ public class ChatService {
     public void addChatMessage(String username, String channelName, String message, String clientId) {
         
         User user = userRepository.findByUsername(username)
-            .orElseGet(() -> {
-                User newUser = new User();
-                newUser.setUsername(username);
-                return userRepository.save(newUser);
-            });
-        
+            .orElseGet(() -> userRepository.save(
+                User.builder()
+                    .username(username)
+                    .build()));
+
         Channel channel = channelRepository.findByChannelName(channelName)
-            .orElseGet(() -> {
-                Channel newChannel = new Channel();
-                newChannel.setChannelName(channelName);
-                
-                // 독케익 채널인 경우 Chzzk 채널 ID 설정
-                if ("독케익".equals(channelName)) {
-                    newChannel.setChzzkChannelId("b68af124ae2f1743a1dcbf5e2ab41e0b");
-                }
-                
-                return channelRepository.save(newChannel);
-            });
-        
-        ChatMessage chatMessage = new ChatMessage();
-        chatMessage.setUser(user);
-        chatMessage.setChannel(channel);
-        chatMessage.setMessage(message);
-        chatMessage.setClientId(clientId);
-        chatMessage.setTimestamp(LocalDateTime.now());
+            .orElseGet(() -> channelRepository.save(
+                Channel.builder()
+                    .channelName(channelName)
+                    // 독케익 채널인 경우 Chzzk 채널 ID 설정
+                    .chzzkChannelId("독케익".equals(channelName)
+                            ? "b68af124ae2f1743a1dcbf5e2ab41e0b" : null)
+                    .build()));
+
+        ChatMessage chatMessage = ChatMessage.builder()
+            .user(user)
+            .channel(channel)
+            .message(message)
+            .clientId(clientId)
+            .timestamp(LocalDateTime.now())
+            .build();
         chatMessageRepository.save(chatMessage);
         
         // Redis 순위 캐시 갱신 (캐시가 있을 때만 +1, 없으면 다음 백필이 포함)
