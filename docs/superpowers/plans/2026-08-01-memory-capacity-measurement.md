@@ -2,8 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:executing-plans로 태스크 단위 실행.
 > 단계는 체크박스(`- [ ]`)로 추적한다.
-> **이 계획의 특수 사정**: Task 6은 실제 치지직 라이브 방송이 여러 개 있을 때만 수행할 수 있다.
-> Task 1~5는 언제든 독립적으로 완결되므로 먼저 끝낸 뒤 Task 6을 기다린다.
+> **이 계획의 특수 사정**: Task 7은 실제 치지직 라이브 방송이 여러 개 있을 때만 수행할 수 있다.
+> Task 1~6은 언제든 독립적으로 완결되므로 먼저 끝낸 뒤 Task 7을 기다린다.
 
 **Goal:** 클라이언트·채널·채팅이 늘어날 때 JVM·Redis·Node 데몬이 각각 먹는 메모리를 측정해,
 항목당 증가분과 수용 한계를 숫자로 확보한다.
@@ -160,8 +160,11 @@ git commit -m "데몬 health 응답에 프로세스 메모리 추가"
 
 **Interfaces:**
 - Produces: `./scripts/measure/snapshot.sh <라벨>` 실행 시
-  - `measurements/<라벨>/` 아래에 원시 출력 4개 파일 저장
-  - 표준출력에 CSV 한 줄: `라벨,힙KB,메타스페이스KB,Redis바이트,데몬RSS바이트,컨테이너,채널수`
+  - `measurements/<라벨>/` 아래에 원시 출력 7개 파일 저장
+  - 표준출력에 CSV 한 줄:
+    `라벨,힙KB,메타스페이스KB,Redis바이트,Redis키수,축출키수,데몬RSS바이트,컨테이너,채널수`
+- `Redis키수`(`DBSIZE`)와 `축출키수`(`evicted_keys`)는 Task 6이 요구한다. 전자는 설계 문서 §3이
+  분리한 두 축 중 "키 개수"를, 후자는 LRU 축출이 시작됐는지를 나타낸다.
 
 - [ ] **Step 1: 스크립트 작성**
 
@@ -187,6 +190,8 @@ sleep 2
 docker exec "$BACKEND" jcmd 1 GC.heap_info            > "$OUT/heap_info.txt"
 docker exec "$BACKEND" jcmd 1 VM.native_memory summary > "$OUT/nmt.txt"
 docker exec "$REDIS" redis-cli INFO memory             > "$OUT/redis_info.txt"
+docker exec "$REDIS" redis-cli INFO stats              > "$OUT/redis_stats.txt"
+docker exec "$REDIS" redis-cli DBSIZE                  > "$OUT/redis_dbsize.txt"
 docker exec "$BACKEND" curl -s http://127.0.0.1:3001/health > "$OUT/daemon_health.json" || \
   echo '{"ok":false,"note":"데몬 미기동"}' > "$OUT/daemon_health.json"
 docker stats --no-stream --format '{{.Name}},{{.MemUsage}},{{.MemPerc}}' > "$OUT/docker_stats.txt"
@@ -202,12 +207,18 @@ META_KB=$(awk '/^-\s+Metaspace/{f=1} f && /committed=/{
 
 REDIS_B=$(grep -oE '^used_memory:[0-9]+' "$OUT/redis_info.txt" | cut -d: -f2)
 
+# 축출이 시작되면 메모리가 더 안 늘어난다 — 한도에 닿았다는 신호이지 여유가 아니다
+EVICTED=$(grep -oE '^evicted_keys:[0-9]+' "$OUT/redis_stats.txt" | cut -d: -f2)
+
+# DBSIZE 는 셸에서 숫자만 나오지만, 형식이 바뀌어도 견디도록 숫자만 뽑는다
+KEYS=$(grep -oE '[0-9]+' "$OUT/redis_dbsize.txt" | head -1)
+
 DAEMON_RSS=$(grep -oE '"rss":[0-9]+' "$OUT/daemon_health.json" | cut -d: -f2 || echo 0)
 CHANNELS=$(grep -oE '"channels":[0-9]+' "$OUT/daemon_health.json" | cut -d: -f2 || echo 0)
 
 CONTAINER=$(grep "^${BACKEND}," "$OUT/docker_stats.txt" | cut -d, -f2)
 
-echo "${LABEL},${HEAP_KB:-0},${META_KB:-0},${REDIS_B:-0},${DAEMON_RSS:-0},${CONTAINER},${CHANNELS:-0}"
+echo "${LABEL},${HEAP_KB:-0},${META_KB:-0},${REDIS_B:-0},${KEYS:-0},${EVICTED:-0},${DAEMON_RSS:-0},${CONTAINER},${CHANNELS:-0}"
 ```
 
 - [ ] **Step 2: 실행 권한 부여 후 아이들 상태에서 실행**
@@ -217,7 +228,9 @@ chmod +x scripts/measure/snapshot.sh
 ./scripts/measure/snapshot.sh smoke
 ```
 
-Expected: `smoke,45678,...` 형태의 CSV 한 줄. 그리고 `measurements/smoke/` 에 파일 5개.
+Expected: `smoke,45678,...` 형태의 CSV 한 줄(열 9개). 그리고 `measurements/smoke/` 에 파일 7개.
+아무 부하도 없는 상태이므로 `축출키수`는 0이어야 한다. 0이 아니면 앞선 측정의 잔여 상태가
+남아 있는 것이니 `redis-cli FLUSHDB` 후 다시 뜬다.
 
 - [ ] **Step 3: 파싱 결과를 원시 파일과 대조**
 
@@ -404,7 +417,150 @@ git commit -m "채팅 축과 클라이언트 축 메모리 측정 결과 기록"
 
 ---
 
-### Task 6: 3단계 측정 — 채널 축과 데몬화 전후 비교
+### Task 6: 3단계 측정 — 시간 경과 축 (버킷 누적)
+
+**Files:**
+- Create: `scripts/measure/load-buckets.sh`
+- Modify: `docs/superpowers/notes/2026-08-01-memory-measurement-results.md`
+
+**Interfaces:**
+- Produces: `./scripts/measure/load-buckets.sh <클라이언트ID> <채널명> <분수> <멤버수>` —
+  현재 시각부터 과거로 `<분수>`개의 버킷 키를 만들고, 각 키에 `<멤버수>`명을 넣는다.
+- 키 이름은 `chat:rank:{client}:{channel}:b:{yyyyMMddHHmm}` — `ChatRankingService.bucketKey`와
+  같은 규칙이어야 한다. 다르면 실제와 다른 것을 재게 된다.
+
+R 축(채팅 유입)은 짧은 시간에 몰아넣으므로 버킷이 1~2개밖에 생기지 않는다. 실제 운영에서는
+1분마다 버킷이 하나씩 생겨 2시간치인 최대 120개가 공존한다. 이 누적분을 시간을 기다리지 않고
+합성해서 잰다.
+
+- [ ] **Step 1: 버킷 합성 스크립트 작성**
+
+```bash
+#!/usr/bin/env bash
+# scripts/measure/load-buckets.sh <클라이언트ID> <채널명> <분수> <멤버수>
+# 과거 N분에 해당하는 버킷 키를 직접 만들어, 2시간 누적 상태를 즉시 재현한다.
+# 키 이름 규칙은 ChatRankingService.bucketKey 와 동일해야 한다.
+set -euo pipefail
+
+CLIENT="${1:?사용법: load-buckets.sh <클라이언트ID> <채널명> <분수> <멤버수>}"
+CHANNEL="${2:?}"
+MINUTES="${3:?}"
+MEMBERS="${4:-50}"
+REDIS=tongnamuking-redis
+
+BASE_KEY="chat:rank:${CLIENT}:${CHANNEL}"
+
+for m in $(seq 0 $((MINUTES - 1))); do
+  # 현재 시각에서 m분 전 (컨테이너 안 date 는 GNU date)
+  STAMP=$(docker exec "$REDIS" date -u -d "-${m} minutes" +%Y%m%d%H%M)
+  KEY="${BASE_KEY}:b:${STAMP}"
+
+  # 멤버 <멤버수>명을 한 번에 넣는다 (ZADD 는 ZINCRBY 와 같은 자료구조를 만든다)
+  ARGS=""
+  for u in $(seq 1 "$MEMBERS"); do
+    ARGS="${ARGS} 1 chatter-${u}"
+  done
+  # shellcheck disable=SC2086
+  docker exec "$REDIS" redis-cli ZADD "$KEY" $ARGS > /dev/null
+  docker exec "$REDIS" redis-cli EXPIRE "$KEY" 7200 > /dev/null
+done
+
+echo "버킷 키 ${MINUTES}개 생성 완료 (${BASE_KEY}:b:*, 키당 멤버 ${MEMBERS}명)"
+```
+
+- [ ] **Step 2: 키 이름 규칙이 실제와 같은지 대조**
+
+```bash
+chmod +x scripts/measure/load-buckets.sh
+./scripts/measure/load-buckets.sh verify-client verify-channel 2 3
+docker exec tongnamuking-redis redis-cli --scan --pattern 'chat:rank:verify-client:*'
+docker exec tongnamuking-redis redis-cli TYPE chat:rank:verify-client:verify-channel:b:$(date -u +%Y%m%d%H%M)
+```
+
+Expected: `chat:rank:verify-client:verify-channel:b:202608021432` 형태의 키 2개, 타입은 `zset`.
+
+**타임존에 주의한다.** 스크립트는 `date -u`(UTC)를 쓰는데 애플리케이션은
+`LocalDateTime.now()`(컨테이너 로컬 시간)를 쓴다. 둘이 다르면 이름이 어긋난다. 실제 애플리케이션이
+만든 버킷 키와 비교해 확인한다:
+
+```bash
+./scripts/measure/load-chat.sh <채널> 10 2
+docker exec tongnamuking-redis redis-cli --scan --pattern 'chat:rank:*:b:*' | tail -5
+```
+
+애플리케이션이 만든 키의 타임스탬프와 스크립트가 만든 것이 같은 분을 가리켜야 한다. 어긋나면
+스크립트의 `date -u` 에서 `-u` 를 빼거나 `TZ=Asia/Seoul` 을 지정한다.
+
+- [ ] **Step 3: 버킷을 늘려가며 측정**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.measure.yml restart backend
+sleep 60
+docker exec tongnamuking-redis redis-cli FLUSHDB   # 앞선 축의 잔여 키 제거
+./scripts/measure/snapshot.sh bucket-0
+
+./scripts/measure/load-buckets.sh measure-client-1 ch1 30 50  && ./scripts/measure/snapshot.sh bucket-30
+./scripts/measure/load-buckets.sh measure-client-1 ch1 60 50  && ./scripts/measure/snapshot.sh bucket-60
+./scripts/measure/load-buckets.sh measure-client-1 ch1 120 50 && ./scripts/measure/snapshot.sh bucket-120
+```
+
+같은 클라이언트·채널에 분수만 늘리므로 키가 덮어써지며 누적된다.
+
+- [ ] **Step 4: 키당 멤버 수 축도 따로 잰다**
+
+키 개수와 키 크기는 별개 축이다(설계 문서 §3). 버킷 수를 120으로 고정하고 멤버 수만 늘린다.
+
+```bash
+docker exec tongnamuking-redis redis-cli FLUSHDB
+./scripts/measure/load-buckets.sh measure-client-1 ch1 120 10   && ./scripts/measure/snapshot.sh member-10
+docker exec tongnamuking-redis redis-cli FLUSHDB
+./scripts/measure/load-buckets.sh measure-client-1 ch1 120 100  && ./scripts/measure/snapshot.sh member-100
+docker exec tongnamuking-redis redis-cli FLUSHDB
+./scripts/measure/load-buckets.sh measure-client-1 ch1 120 1000 && ./scripts/measure/snapshot.sh member-1000
+```
+
+Redis는 작은 Sorted Set을 `listpack`으로 압축 저장하다가 임계치를 넘으면 `skiplist`로 바꾼다.
+**멤버 수를 늘리다 보면 어느 지점에서 메모리가 계단식으로 뛴다.** 그 지점을 결과에 기록한다.
+
+```bash
+docker exec tongnamuking-redis redis-cli OBJECT ENCODING chat:rank:measure-client-1:ch1:b:<분>
+```
+
+- [ ] **Step 5: 결과 기록**
+
+결과 문서에 표 두 개를 추가한다.
+
+```markdown
+## 시간 경과 축 (버킷 누적, 키당 멤버 50명 고정)
+
+| 버킷 수 | 키 개수 | Redis B | 버킷당 증가분 | evicted_keys |
+|---|---|---|---|---|
+| 0 | | | | |
+| 30 | | | | |
+| 60 | | | | |
+| 120 | | | | |
+
+> 이 수치는 시간을 기다리지 않고 버킷 키를 합성해 만든 것이다 (설계 문서 §5).
+
+## 키당 멤버 수 축 (버킷 120개 고정)
+
+| 멤버 수 | Redis B | OBJECT ENCODING | 멤버당 증가분 |
+|---|---|---|---|
+| 10 | | | listpack? |
+| 100 | | | |
+| 1,000 | | | skiplist? |
+```
+
+- [ ] **Step 6: 커밋**
+
+```bash
+git add scripts/measure/load-buckets.sh docs/superpowers/notes/2026-08-01-memory-measurement-results.md
+git commit -m "시간 경과 축과 키당 멤버 수 축 측정 결과 기록"
+```
+
+---
+
+### Task 7: 4단계 측정 — 채널 축과 데몬화 전후 비교
 
 **사전조건:** 치지직에 라이브 중인 채널이 최소 8개 필요하다. 채널 ID는 치지직 웹에서
 스트리머 페이지 URL의 해시값으로 확보한다.
@@ -480,7 +636,7 @@ git commit -m "채널 축 메모리 측정과 데몬화 전후 비교 기록"
 
 ---
 
-### Task 7: 결론 — 수용 한계 산정과 설정 재검토
+### Task 8: 결론 — 수용 한계 산정과 설정 재검토
 
 **Files:**
 - Modify: `docs/superpowers/notes/2026-08-01-memory-measurement-results.md`
@@ -522,13 +678,17 @@ git commit -m "메모리 수용 한계 산정과 가설 검증 결과 정리"
 
 ## Self-Review 결과
 
-- **스펙 커버리지**: 설계 문서 §2의 세 축이 Task 5(C·R)와 Task 6(M)에 매핑됨. §4 측정 환경 → Task 1,
-  §5 부하 생성 → Task 4, §6 측정 절차 → Task 3(스크립트로 고정), §7 진행 순서 → Task 5·6,
-  §8 산출물 → Task 5·6·7. §3 가설 검증은 Task 7 Step 2에 배치.
+- **스펙 커버리지**: 설계 문서 §2의 네 축이 Task 5(C·R), Task 6(T), Task 7(M)에 매핑됨.
+  §4 측정 환경 → Task 1, §5 부하 생성 → Task 4·6, §6 측정 절차 → Task 3(스크립트로 고정),
+  §7 진행 순서 → Task 5·6·7, §8 산출물 → Task 5·6·7·8. §3 가설 검증은 Task 8 Step 2에 배치.
+  §3이 분리한 "키 개수 / 키당 멤버 수" 두 축은 각각 Task 6 Step 3·4에 대응한다.
 - **타입 일관성**: 컨테이너명 `tongnamuking-backend`/`tongnamuking-redis`, 데몬 포트 3001,
-  클라이언트 ID 접두사 `measure-client-`, 스냅샷 CSV 열 순서 — 태스크 간 참조 일치 확인.
-- **알려진 불확실성 2개** (해당 태스크에 처리 지침 포함):
+  클라이언트 ID 접두사 `measure-client-`, 버킷 키 규칙
+  `chat:rank:{client}:{channel}:b:{yyyyMMddHHmm}`, 스냅샷 CSV 열 순서 — 태스크 간 참조 일치 확인.
+- **알려진 불확실성 3개** (해당 태스크에 처리 지침 포함):
   1. `snapshot.sh`의 힙 파싱은 수집기 종류에 따라 출력이 달라질 수 있다 → Task 3 Step 3에서
      원시 출력과 대조하는 단계를 필수로 뒀다.
   2. 가짜 채널 ID로는 구독이 롤백될 수 있다 → Task 4 Step 3에서 실제 응답을 보고 C축 진행
      방식을 정하도록 했다.
+  3. 버킷 키 합성 시 타임존이 애플리케이션과 어긋날 수 있다 → Task 6 Step 2에서 애플리케이션이
+     만든 실제 키와 대조하는 단계를 뒀다.
