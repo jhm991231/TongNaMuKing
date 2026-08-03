@@ -39,7 +39,11 @@
 - 컨테이너 메모리 예산을 **512MB로 명시**한다. 지금 로컬 compose에는 한도가 없어 "예산 대비
   몇 %" 계산이 불가능하다. 명시적 예산이 있어야 수용 한계를 산정할 수 있다.
 
-- [ ] **Step 1: 오버라이드 파일 작성**
+- [x] **Step 1: 오버라이드 파일 작성**
+
+> 실제 파일은 아래 YAML 과 달리 `java ...` 를 **한 줄로** 폈다. YAML 의 접힌 문자열(`>`)은
+> 더 깊게 들여쓴 줄을 접지 않고 줄바꿈을 유지하므로, JVM 옵션을 보기 좋게 들여쓰면
+> `-XX:MaxMetaspaceSize=128m` 이 별개 명령으로 실행되려다 깨진다.
 
 ```yaml
 # docker-compose.measure.yml
@@ -65,16 +69,26 @@ services:
     mem_limit: 512m
 ```
 
-- [ ] **Step 2: 기동**
+- [x] **Step 2: 기동**
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.measure.yml up -d
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.measure.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.measure.yml ps
 ```
 
 Expected: `tongnamuking-backend`, `tongnamuking-redis`, `tongnamuking-mysql` 이 모두 Up.
 
-- [ ] **Step 3: jcmd 가 붙는지 확인**
+오늘 자바 코드가 바뀌었다면 `--build` 를 반드시 붙인다. 없으면 옛 jar 가 그대로 돈다.
+그리고 오버라이드가 실제로 걸렸는지 명령줄로 확인한다.
+
+```bash
+docker exec tongnamuking-backend ps -ef | grep "[j]ava"
+```
+
+Expected: `-Xmx192m -Xms128m -XX:MaxMetaspaceSize=128m -XX:MaxDirectMemorySize=32m -Xss512k
+-XX:NativeMemoryTracking=summary ...` 가 모두 보인다.
+
+- [x] **Step 3: jcmd 가 붙는지 확인**
 
 ```bash
 docker exec tongnamuking-backend jcmd 1 GC.heap_info
@@ -197,13 +211,23 @@ docker exec "$BACKEND" curl -s http://127.0.0.1:3001/health > "$OUT/daemon_healt
 docker stats --no-stream --format '{{.Name}},{{.MemUsage}},{{.MemPerc}}' > "$OUT/docker_stats.txt"
 
 # ── 파싱 ────────────────────────────────────────────────
-# heap_info 의 'used NNNNNK' 를 모두 더한다.
-# 세대별 수집기면 여러 줄, G1이면 한 줄이 나온다. 원시 파일과 대조해 검증할 것.
-HEAP_KB=$(grep -oE 'used [0-9]+K' "$OUT/heap_info.txt" \
-          | grep -oE '[0-9]+' | paste -sd+ - | bc)
+# 힙은 "세대" 줄만 더한다. Task 1에서 확인한 실제 출력(SerialGC):
+#
+#   def new generation   total 39424K, used 18068K [...      ← 힙
+#   tenured generation   total 87424K, used 37678K [...      ← 힙
+#   Metaspace       used 100289K, committed 101184K, ...     ← 힙 아님
+#     class space   used  13364K, committed  13760K, ...     ← Metaspace 의 일부
+#
+# 'used [0-9]+K' 를 전부 더하면 Metaspace 와 class space 까지 섞여 세 배 넘게 부푼다
+# (169,399K vs 실제 55,746K). eden/from/to/the space 줄은 'NN% used' 형식이라
+# 이 패턴에 걸리지 않으므로 이중 계산되지 않는다.
+HEAP_KB=$(grep -E '(new|tenured) generation' "$OUT/heap_info.txt" \
+          | grep -oE 'used [0-9]+K' | grep -oE '[0-9]+' | paste -sd+ - | bc)
 
-META_KB=$(awk '/^-\s+Metaspace/{f=1} f && /committed=/{
-            match($0, /committed=([0-9]+)KB/, m); print m[1]; exit }' "$OUT/nmt.txt")
+# Metaspace 는 힙과 별개인 네이티브 영역이므로 따로 센다.
+# heap_info 의 'Metaspace used' 줄에서 뽑는다 (NMT 없이도 얻을 수 있다).
+META_KB=$(grep -E '^ *Metaspace' "$OUT/heap_info.txt" \
+          | grep -oE 'used [0-9]+K' | grep -oE '[0-9]+')
 
 REDIS_B=$(grep -oE '^used_memory:[0-9]+' "$OUT/redis_info.txt" | cut -d: -f2)
 
@@ -238,9 +262,21 @@ Expected: `smoke,45678,...` 형태의 CSV 한 줄(열 9개). 그리고 `measurem
 cat measurements/smoke/heap_info.txt
 ```
 
-`used NNNNNK` 값들을 눈으로 더해 CSV의 힙 값과 맞는지 확인한다. **여기서 안 맞으면 이후 모든
-측정이 틀린다.** 수집기 종류에 따라 출력 형식이 달라 파싱이 어긋날 수 있으므로, 이 한 번의
-대조가 필수다. 어긋나면 `HEAP_KB` 추출식을 실제 출력에 맞게 고친다.
+"세대" 줄들의 `used NNNNNK` 를 눈으로 더해 CSV의 힙 값과 맞는지 확인한다.
+**여기서 안 맞으면 이후 모든 측정이 틀린다.**
+
+**출력 형식은 GC 종류에 묶여 있다.** 위 추출식은 Task 1에서 실제로 확인한 **SerialGC** 출력
+(`def new generation` / `tenured generation`) 기준이다. 컨테이너 메모리와 CPU가 적어 JVM 이
+SerialGC 를 고른 결과다. 예산을 키우거나 CPU 를 늘리면 JVM 이 G1 을 고를 수 있고, 그때는
+`garbage-first heap total ..., used ...` 한 줄 형식이 되어 `(new|tenured) generation` 패턴이
+아무것도 잡지 못한다(합계가 빈 문자열이 되어 CSV에 0 이 찍힌다).
+
+따라서 **측정 조건을 바꾼 뒤에는 이 대조를 다시 한다.** 어느 GC 였는지도 결과 문서에 적는다.
+현재 GC 는 아래로 확인한다.
+
+```bash
+docker exec tongnamuking-backend jcmd 1 VM.flags | tr ' ' '\n' | grep -i 'use.*gc'
+```
 
 - [ ] **Step 4: measurements/ 를 git에서 제외하고 커밋**
 
