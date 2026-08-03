@@ -1,0 +1,24 @@
+# 메모리 측정 전용 오버라이드.
+# 평소 실행 경로(docker-compose.yml, start.sh)는 건드리지 않는다.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.measure.yml up -d --build
+#
+# 매번 -f 두 개를 적기 번거로우면 아래를 export 해두면 된다. restart/logs 같은 후속
+# 명령에서 -f 를 빠뜨리면 조용히 오버라이드 없는 컨테이너가 떠서, JVM 상한도 mem_limit 도
+# 없는 상태로 측정하게 된다. 숫자는 나오므로 알아채기 어렵다.
+#
+#   export COMPOSE_FILE=docker-compose.yml:docker-compose.measure.yml
+services:
+  backend:
+    # 배포(start.sh)와 같은 JVM 상한을 걸고, 비힙 관측을 위해 NMT 를 켠다.
+    # NMT 는 5~10% 오버헤드가 있으므로 측정할 때만 켠다.
+    command: >
+      bash -c "
+      cd /app/chat-collector &&
+      if [ ! -d node_modules ]; then npm install; fi &&
+      cd /app &&
+      java -Xmx192m -Xms128m -XX:MaxMetaspaceSize=128m -XX:MaxDirectMemorySize=32m -Xss512k -XX:NativeMemoryTracking=summary -XX:+HeapDumpOnOutOfMemoryError -jar app.jar
+      "
+    # 수용 한계를 %로 말하려면 예산이 명시돼 있어야 한다.
+    # docker compose(v2)는 swarm 이 아닌 실행에서 mem_limit 를 그대로 적용한다.
+    mem_limit: 512m
