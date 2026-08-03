@@ -4,3 +4,6 @@ HANDOFF.md
 # IDE
 .idea/
 *.iml
+
+# 메모리 측정 원시 출력 (측정할 때마다 쌓인다. 결과는 docs/superpowers/notes 에 정리)
+measurements/
