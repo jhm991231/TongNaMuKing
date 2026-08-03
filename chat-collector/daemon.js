@@ -172,7 +172,18 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
 
   if (req.method === "GET" && url.pathname === "/health") {
-    sendJson(200, { ok: true, channels: channels.size });
+    // 이 데몬은 백엔드 JVM의 자식 프로세스라, 밖에서는 메모리 사용량을 볼 수 없다.
+    // (JVM 힙을 들여다봐도 자식 프로세스는 잡히지 않는다)
+    // rss = OS가 이 프로세스에 실제로 준 물리 메모리. 컨테이너 예산을 잠식하는 값이다.
+    // heapUsed는 V8 힙만이므로 rss보다 작다.
+    const mem = process.memoryUsage();
+    sendJson(200, {
+      ok: true,
+      channels: channels.size,
+      rss: mem.rss,
+      heapUsed: mem.heapUsed,
+      external: mem.external,
+    });
     return;
   }
 
