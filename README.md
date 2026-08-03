@@ -126,10 +126,10 @@ TongNaMuKing/
 │   │   └── application-local.properties    # 로컬 개발 설정
 │   └── Dockerfile
 ├── chat-collector/             # Node.js 채팅 수집기
-│   ├── index.js              # 메인 수집 로직
+│   ├── daemon.js             # 멀티채널 수집 데몬 (프로세스 1개가 채널마다 구독)
+│   ├── index.js              # 단일 채널 수집기 (독케익 전용 경로)
 │   └── package.json
 ├── docker-compose.yml         # 로컬 개발용
-├── docker-compose.prod.yml    # 운영 배포용
 ├── Dockerfile                 # Railway 배포용
 ├── railway.json              # Railway 설정
 └── README.md
