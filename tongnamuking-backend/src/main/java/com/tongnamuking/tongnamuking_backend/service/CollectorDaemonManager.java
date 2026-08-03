@@ -99,8 +99,19 @@ public class CollectorDaemonManager {
         if (shuttingDown) {
             return false;
         }
+        // 상대 경로는 실행 위치가 바뀌면 엉뚱한 곳을 가리킨다. 그대로 node 에 넘기면
+        // "Cannot find module" 만 나와서 원인을 알 수 없으므로, 여기서 미리 끊고
+        // 무엇을 어디서 찾았는지 함께 알린다.
+        File script = new File(scriptPath).getAbsoluteFile();
+        if (!script.isFile()) {
+            // 설정이 잘못된 것이므로 재시도해도 낫지 않는다. 복구 루프를 돌리지 않는다.
+            log.error("수집기 데몬 스크립트를 찾을 수 없습니다. "
+                            + "설정={}, 찾은 경로={}, 작업 디렉터리={}",
+                    scriptPath, script.getAbsolutePath(), System.getProperty("user.dir"));
+            return false;
+        }
+
         try {
-            File script = new File(scriptPath);
             ProcessBuilder builder = new ProcessBuilder("node", script.getAbsolutePath());
             builder.redirectErrorStream(true);
             builder.environment().put("COLLECTOR_PORT", String.valueOf(port));
@@ -128,7 +139,8 @@ public class CollectorDaemonManager {
             // 예외라도 여기서 잡아야 한다. 그렇지 않으면 이 메서드가 scheduleRestart()의
             // runAsync 람다 안에서 호출될 때 예외가 그대로 전파되어, 아무도 관찰하지 않는
             // CompletableFuture가 이를 삼켜버리고 복구 루프 전체가 조용히 영구 정지한다.
-            log.error("수집기 데몬 시작 실패 (script: {})", scriptPath, e);
+            log.error("수집기 데몬 시작 실패 (설정={}, 찾은 경로={})",
+                    scriptPath, script.getAbsolutePath(), e);
             scheduleRestart(System.currentTimeMillis());
             return false;
         }

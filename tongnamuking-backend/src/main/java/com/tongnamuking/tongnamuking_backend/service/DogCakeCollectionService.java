@@ -25,6 +25,16 @@ public class DogCakeCollectionService {
         // 설정값이 상대 경로여도 되도록 절대 경로로 푼다 (JVM 작업 디렉터리 기준)
         File script = new File(scriptPath).getAbsoluteFile();
 
+        // 상대 경로는 실행 위치가 바뀌면 엉뚱한 곳을 가리킨다. 그대로 node 에 넘기면
+        // "Cannot find module" 만 나와서 원인을 알 수 없으므로, 여기서 미리 끊고
+        // 무엇을 어디서 찾았는지 함께 알린다.
+        if (!script.isFile()) {
+            throw new IllegalStateException(String.format(
+                    "독케익 수집기 스크립트를 찾을 수 없습니다. "
+                            + "설정=%s, 찾은 경로=%s, 작업 디렉터리=%s",
+                    scriptPath, script.getAbsolutePath(), System.getProperty("user.dir")));
+        }
+
         ProcessBuilder processBuilder = new ProcessBuilder(
                 "node", script.getAbsolutePath(), DOGCAKE_CHANNEL_ID, clientId);
         // 실행 위치를 스크립트 폴더로 고정한다. 지정하지 않으면 JVM 의 작업 디렉터리를
