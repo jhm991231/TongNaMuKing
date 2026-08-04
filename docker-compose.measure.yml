@@ -17,7 +17,7 @@ services:
       cd /app/chat-collector &&
       if [ ! -d node_modules ]; then npm install; fi &&
       cd /app &&
-      java -Xmx192m -Xms128m -XX:MaxMetaspaceSize=128m -XX:MaxDirectMemorySize=32m -Xss512k -XX:NativeMemoryTracking=summary -XX:+HeapDumpOnOutOfMemoryError -jar app.jar
+      java -Xmx128m -Xms64m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=32m -Xss512k -XX:NativeMemoryTracking=summary -XX:+HeapDumpOnOutOfMemoryError -jar app.jar
       "
     # 수용 한계를 %로 말하려면 예산이 명시돼 있어야 한다.
     # docker compose(v2)는 swarm 이 아닌 실행에서 mem_limit 를 그대로 적용한다.
