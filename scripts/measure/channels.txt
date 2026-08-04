@@ -1,0 +1,14 @@
+# 채널 축(M) 측정에 쓰는 실제 치지직 채널 ID 목록.
+# 방송 중일 필요는 없다 — 치지직은 방송이 꺼져 있어도 채널과 채팅방이 존재하므로
+# 데몬이 WebSocket 을 열 수 있다(결과 문서 §방법론 참고).
+#
+# 채널 ID 는 치지직 채널 페이지 URL 끝의 해시값이다:
+#   https://chzzk.naver.com/b68af124ae2f1743a1dcbf5e2ab41e0b
+b6845db9a47441227410125f581eee31
+088973112d8acc831ec20274f7ffbb99
+c3702f874360da3f81ae24ddf1f0343e
+7c4c49fd3a34ce68e84075f5b44fe8c8
+64d76089fba26b180d9c9e48a32600d9
+8fd39bb8de623317de90654718638b10
+ad58c752aef8b249ac3c7b6e5276ebe6
+dae2de8eaa005a59163f2e4c045e1aa1
