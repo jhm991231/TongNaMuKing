@@ -102,7 +102,7 @@ Expected: 첫 명령은 `used NNNNNK` 를 포함한 힙 정보. 두 번째는 `J
 적용되지 않은 것이다. `docker exec tongnamuking-backend ps aux | grep java` 로 실제 명령줄을
 확인한다.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add docker-compose.measure.yml
@@ -125,7 +125,7 @@ git commit -m "측정 전용 compose 오버라이드 추가"
 서버를 갖고 있으므로 자기 자신을 보고하게 하는 편이 안정적이다. `process.memoryUsage()` 는
 JDK Actuator와 달리 내장 함수 호출이라 상시 켜두어도 무해하다.
 
-- [ ] **Step 1: /health 핸들러 수정**
+- [x] **Step 1: /health 핸들러 수정**
 
 ```js
   if (req.method === "GET" && url.pathname === "/health") {
@@ -143,7 +143,7 @@ JDK Actuator와 달리 내장 함수 호출이라 상시 켜두어도 무해하�
   }
 ```
 
-- [ ] **Step 2: 재기동 후 확인**
+- [x] **Step 2: 재기동 후 확인**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.measure.yml restart backend
@@ -158,7 +158,7 @@ Expected: `{"ok":true,"channels":0,"rss":<수천만>,"heapUsed":<수백만>,"ext
 구독을 하나 만든 뒤 다시 확인하고, **"구독 0건일 때 데몬이 뜨는가"를 Task 5 베이스라인에
 사실로 기록한다.** 이 사실 자체가 베이스라인 메모리를 좌우한다.
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 git add chat-collector/daemon.js
@@ -180,7 +180,7 @@ git commit -m "데몬 health 응답에 프로세스 메모리 추가"
 - `Redis키수`(`DBSIZE`)와 `축출키수`(`evicted_keys`)는 Task 6이 요구한다. 전자는 설계 문서 §3이
   분리한 두 축 중 "키 개수"를, 후자는 LRU 축출이 시작됐는지를 나타낸다.
 
-- [ ] **Step 1: 스크립트 작성**
+- [x] **Step 1: 스크립트 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -245,7 +245,7 @@ CONTAINER=$(grep "^${BACKEND}," "$OUT/docker_stats.txt" | cut -d, -f2)
 echo "${LABEL},${HEAP_KB:-0},${META_KB:-0},${REDIS_B:-0},${KEYS:-0},${EVICTED:-0},${DAEMON_RSS:-0},${CONTAINER},${CHANNELS:-0}"
 ```
 
-- [ ] **Step 2: 실행 권한 부여 후 아이들 상태에서 실행**
+- [x] **Step 2: 실행 권한 부여 후 아이들 상태에서 실행**
 
 ```bash
 chmod +x scripts/measure/snapshot.sh
@@ -256,7 +256,7 @@ Expected: `smoke,45678,...` 형태의 CSV 한 줄(열 9개). 그리고 `measurem
 아무 부하도 없는 상태이므로 `축출키수`는 0이어야 한다. 0이 아니면 앞선 측정의 잔여 상태가
 남아 있는 것이니 `redis-cli FLUSHDB` 후 다시 뜬다.
 
-- [ ] **Step 3: 파싱 결과를 원시 파일과 대조**
+- [x] **Step 3: 파싱 결과를 원시 파일과 대조**
 
 ```bash
 cat measurements/smoke/heap_info.txt
@@ -278,7 +278,7 @@ SerialGC 를 고른 결과다. 예산을 키우거나 CPU 를 늘리면 JVM 이 
 docker exec tongnamuking-backend jcmd 1 VM.flags | tr ' ' '\n' | grep -i 'use.*gc'
 ```
 
-- [ ] **Step 4: measurements/ 를 git에서 제외하고 커밋**
+- [x] **Step 4: measurements/ 를 git에서 제외하고 커밋**
 
 ```bash
 echo "measurements/" >> .gitignore
@@ -302,7 +302,7 @@ git commit -m "메모리 스냅샷 스크립트 추가"
 **Consumes:** `ClientIdentifierService`가 `X-Client-ID` 헤더를 클라이언트 식별자로 쓴다
 (`ClientIdentifierService:23`). 헤더만 바꾸면 별개 클라이언트로 취급된다.
 
-- [ ] **Step 1: 클라이언트 부하 스크립트 작성**
+- [x] **Step 1: 클라이언트 부하 스크립트 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -323,7 +323,7 @@ done
 echo "구독 요청 ${COUNT}건 전송 완료 (채널 ${CHANNEL})"
 ```
 
-- [ ] **Step 2: 채팅 부하 스크립트 작성**
+- [x] **Step 2: 채팅 부하 스크립트 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -350,7 +350,7 @@ seq 1 "$TOTAL" | xargs -P "$CONCURRENCY" -I{} bash -c 'send_one {}'
 echo "채팅 ${TOTAL}건 주입 완료 (동시성 ${CONCURRENCY})"
 ```
 
-- [ ] **Step 3: 작은 수로 동작 확인**
+- [x] **Step 3: 작은 수로 동작 확인**
 
 ```bash
 chmod +x scripts/measure/load-clients.sh scripts/measure/load-chat.sh
@@ -370,7 +370,7 @@ Expected: `status` 응답에 구독 정보가 보이고, Redis에 `chat:rank:mea
 
 어느 쪽으로 갈지는 이 단계에서 실제 응답을 보고 정한 뒤 **Task 5 문서에 근거와 함께 기록**한다.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add scripts/measure/load-clients.sh scripts/measure/load-chat.sh
@@ -386,7 +386,7 @@ git commit -m "메모리 측정용 부하 주입 스크립트 추가"
 
 **Consumes:** Task 3의 `snapshot.sh`, Task 4의 두 부하 스크립트.
 
-- [ ] **Step 1: 베이스라인 측정**
+- [x] **Step 1: 베이스라인 측정**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.measure.yml down
@@ -398,7 +398,7 @@ sleep 60   # 기동 직후 워밍업 요동이 가라앉기를 기다린다
 결과 문서에 **"구독 0건일 때 Node 데몬이 떠 있는가"** 를 함께 기록한다
 (`daemon_health.json` 이 `"ok":false` 면 미기동).
 
-- [ ] **Step 2: 채팅 축 측정**
+- [x] **Step 2: 채팅 축 측정**
 
 각 지점마다 부하 주입 → 스냅샷 순으로 진행한다. 누적이므로 되돌리지 않는다.
 
@@ -408,7 +408,7 @@ sleep 60   # 기동 직후 워밍업 요동이 가라앉기를 기다린다
 ./scripts/measure/load-chat.sh <채널> 40000 20  && ./scripts/measure/snapshot.sh chat-50k
 ```
 
-- [ ] **Step 3: 클라이언트 축 측정**
+- [x] **Step 3: 클라이언트 축 측정**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.measure.yml restart backend
@@ -426,7 +426,7 @@ sleep 60
 ./scripts/measure/load-chat.sh <채널> 100 10   # 키 실체화용
 ```
 
-- [ ] **Step 4: 결과 문서 작성**
+- [x] **Step 4: 결과 문서 작성**
 
 `docs/superpowers/notes/2026-08-01-memory-measurement-results.md` 에 축별 표를 채운다.
 
@@ -444,7 +444,7 @@ sleep 60
 
 각 표 아래에 **가설(설계 문서 §3)과 맞았는지**를 한 줄로 적는다. 빗나갔으면 그게 발견이다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add docs/superpowers/notes/2026-08-01-memory-measurement-results.md
@@ -469,7 +469,7 @@ R 축(채팅 유입)은 짧은 시간에 몰아넣으므로 버킷이 1~2개밖�
 1분마다 버킷이 하나씩 생겨 2시간치인 최대 120개가 공존한다. 이 누적분을 시간을 기다리지 않고
 합성해서 잰다.
 
-- [ ] **Step 1: 버킷 합성 스크립트 작성**
+- [x] **Step 1: 버킷 합성 스크립트 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -504,7 +504,7 @@ done
 echo "버킷 키 ${MINUTES}개 생성 완료 (${BASE_KEY}:b:*, 키당 멤버 ${MEMBERS}명)"
 ```
 
-- [ ] **Step 2: 키 이름 규칙이 실제와 같은지 대조**
+- [x] **Step 2: 키 이름 규칙이 실제와 같은지 대조**
 
 ```bash
 chmod +x scripts/measure/load-buckets.sh
@@ -527,7 +527,7 @@ docker exec tongnamuking-redis redis-cli --scan --pattern 'chat:rank:*:b:*' | ta
 애플리케이션이 만든 키의 타임스탬프와 스크립트가 만든 것이 같은 분을 가리켜야 한다. 어긋나면
 스크립트의 `date -u` 에서 `-u` 를 빼거나 `TZ=Asia/Seoul` 을 지정한다.
 
-- [ ] **Step 3: 버킷을 늘려가며 측정**
+- [x] **Step 3: 버킷을 늘려가며 측정**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.measure.yml restart backend
@@ -542,7 +542,7 @@ docker exec tongnamuking-redis redis-cli FLUSHDB   # 앞선 축의 잔여 키 �
 
 같은 클라이언트·채널에 분수만 늘리므로 키가 덮어써지며 누적된다.
 
-- [ ] **Step 4: 키당 멤버 수 축도 따로 잰다**
+- [x] **Step 4: 키당 멤버 수 축도 따로 잰다**
 
 키 개수와 키 크기는 별개 축이다(설계 문서 §3). 버킷 수를 120으로 고정하고 멤버 수만 늘린다.
 
@@ -562,7 +562,7 @@ Redis는 작은 Sorted Set을 `listpack`으로 압축 저장하다가 임계치�
 docker exec tongnamuking-redis redis-cli OBJECT ENCODING chat:rank:measure-client-1:ch1:b:<분>
 ```
 
-- [ ] **Step 5: 결과 기록**
+- [x] **Step 5: 결과 기록**
 
 결과 문서에 표 두 개를 추가한다.
 
@@ -587,7 +587,7 @@ docker exec tongnamuking-redis redis-cli OBJECT ENCODING chat:rank:measure-clien
 | 1,000 | | | skiplist? |
 ```
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add scripts/measure/load-buckets.sh docs/superpowers/notes/2026-08-01-memory-measurement-results.md
@@ -604,7 +604,7 @@ git commit -m "시간 경과 축과 키당 멤버 수 축 측정 결과 기록"
 **Files:**
 - Modify: `docs/superpowers/notes/2026-08-01-memory-measurement-results.md`
 
-- [ ] **Step 1: 라이브 채널 ID 목록 확보**
+- [x] **Step 1: 라이브 채널 ID 목록 확보**
 
 ```bash
 # 확보한 ID를 파일로 모아둔다 (재현 시 어떤 채널이었는지 남기기 위함)
@@ -614,7 +614,7 @@ b68af124ae2f1743a1dcbf5e2ab41e0b
 EOF
 ```
 
-- [ ] **Step 2: 채널을 하나씩 늘리며 측정**
+- [x] **Step 2: 채널을 하나씩 늘리며 측정**
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.measure.yml restart backend
@@ -635,7 +635,7 @@ done < measurements/live-channels.txt
 클라이언트당 채널 3개 제한(`getMaxChannelsPerClient`)이 있으므로 채널마다 다른
 `X-Client-ID`를 쓴다. 같은 클라이언트로 4번째 채널을 구독하면 거부된다.
 
-- [ ] **Step 3: 데몬화 전 방식의 비용 측정**
+- [x] **Step 3: 데몬화 전 방식의 비용 측정**
 
 `DogCakeCollectionService`가 아직 채널당 프로세스를 띄우는 방식(`ProcessBuilder`)을 쓴다.
 이 경로로 수집을 한 번 시작시켜 **Node 프로세스 하나의 RSS**를 잰다.
@@ -648,7 +648,7 @@ docker exec tongnamuking-backend bash -c \
 Expected: `node .../daemon.js` 와 별개로 `node .../index.js` 프로세스가 보이고, 각각의 RSS(KB)를
 얻는다. 이 값이 **채널 1개당 프로세스 비용**의 기준값이다.
 
-- [ ] **Step 4: 비교표 작성**
+- [x] **Step 4: 비교표 작성**
 
 ```markdown
 ## 채널 축 — 데몬화 전후
@@ -663,7 +663,7 @@ Expected: `node .../daemon.js` 와 별개로 `node .../index.js` 프로세스가
 프로세스 방식은 실제로 8개를 띄우면 컨테이너가 죽을 수 있으므로, **1개 실측값 × N** 으로
 추정하고 그 사실을 표에 명시한다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add docs/superpowers/notes/2026-08-01-memory-measurement-results.md measurements/live-channels.txt
@@ -678,7 +678,7 @@ git commit -m "채널 축 메모리 측정과 데몬화 전후 비교 기록"
 - Modify: `docs/superpowers/notes/2026-08-01-memory-measurement-results.md`
 - Modify: `start.sh` (숫자에 근거가 생겼을 때만)
 
-- [ ] **Step 1: 축별 수용 한계 계산**
+- [x] **Step 1: 축별 수용 한계 계산**
 
 각 축의 항목당 증가분과 컨테이너 예산(512MB)으로 계산해 결과 문서에 적는다.
 
@@ -688,12 +688,12 @@ git commit -m "채널 축 메모리 측정과 데몬화 전후 비교 기록"
 
 세 축 중 **무엇이 먼저 한계에 닿는지**를 한 문단으로 정리한다.
 
-- [ ] **Step 2: 가설 검증 결과 정리**
+- [x] **Step 2: 가설 검증 결과 정리**
 
 설계 문서 §3의 가설 표를 그대로 옮겨 적고, 각 칸에 실측이 맞았는지 표시한다. 빗나간 칸은
 왜 빗나갔는지 원시 출력(`measurements/*/nmt.txt` 등)을 근거로 설명한다.
 
-- [ ] **Step 3: JVM 상한 재검토**
+- [x] **Step 3: JVM 상한 재검토**
 
 현재 `-Xmx192m`은 OOM 대응으로 급히 조인 값이라 근거가 없다. 측정으로 확보한 실사용량을
 근거로 조정이 필요한지 판단한다.
@@ -703,7 +703,7 @@ git commit -m "채널 축 메모리 측정과 데몬화 전후 비교 기록"
 
 **숫자에 근거가 생겼을 때만 `start.sh`를 고친다.** 근거 없이 조정하면 지금과 같은 상태가 된다.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add docs/superpowers/notes/2026-08-01-memory-measurement-results.md
